@@ -1,0 +1,31 @@
+export const chatEn = {
+  sampleLabel: "Illustrative task conversation",
+  dateLabel: "EXAMPLE SESSION",
+  taskTitle: "Bounded webhook retries",
+  userLabel: "Example request",
+  userMessage: "Add bounded retry handling to the webhook client. Preserve the existing backoff behavior and include coverage for exhausted retries.",
+  assistantLabel: "Example response",
+  assistantMessage: "A task like this could preserve the existing backoff policy, set a clear attempt limit, and prepare focused coverage for the retry outcome.",
+  planTitle: "Plan example",
+  planStatus: "Plan example · not executed",
+  planSteps: [
+    "Inspect the retry policy and existing coverage",
+    "Describe a bounded retry approach",
+    "Identify cases to review",
+  ],
+  verificationTitle: "Verification",
+  verificationStatus: "Not run",
+  verificationChecks: [
+    { name: "Tests", status: "Not run" },
+    { name: "Type check", status: "Not run" },
+    { name: "Lint", status: "Not run" },
+  ],
+  filesTitle: "Illustrative file review",
+  filesStatus: "No files changed",
+  filesNotice: "Example paths · not connected to a repository",
+  fileEntries: [
+    { path: "src/webhooks/client.ts", detail: "Example source file" },
+    { path: "src/webhooks/client.test.ts", detail: "Example test file" },
+  ],
+  diffNotice: "Example file list only · no diff was loaded or applied",
+} as const;

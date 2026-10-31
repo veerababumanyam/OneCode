@@ -1,0 +1,20 @@
+# Code owners for OneCode.
+# Owners are not assigned yet. Before the repository is hosted, replace each
+# comment below with real users or teams and uncomment it, so security-sensitive
+# paths always route to the security owners (docs/ENGINEERING-STANDARDS.md §4,
+# docs/SOC2-CONTROLS.md CC8.1). The last matching pattern wins.
+
+# * <default-owners>
+# /docs/AGENT-OPERATING-RULES.md <security-owners>
+# /docs/SECURE-CODING.md <security-owners>
+# /docs/SOC2-CONTROLS.md <security-owners>
+# /docs/adr/ <architecture-owners>
+# /apps/desktop/src-tauri/capabilities/ <security-owners>
+# /apps/desktop/src-tauri/tauri.conf.json <security-owners>
+# /crates/onecode-policy/ <security-owners>
+# /crates/onecode-gateway/ <security-owners>
+# /crates/onecode-hooks/ <security-owners>
+# /crates/onecode-settings/ <security-owners>
+# /crates/onecode-platform-*/ <security-owners>
+# /.claude/ <security-owners>
+# /.github/ <security-owners>

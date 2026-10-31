@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run check:tokens)",
+      "Bash(npm test)",
+      "Bash(npx vitest run *)",
+      "Bash(cargo check *)",
+      "Bash(cargo test *)",
+      "Bash(cargo fmt *)",
+      "Bash(cargo clippy *)",
+      "Bash(node scripts/check-doc-links.mjs)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(npm publish *)",
+      "Bash(cargo publish *)",
+      "PowerShell(git push *)",
+      "PowerShell(npm publish *)",
+      "PowerShell(cargo publish *)",
+      "Edit(./.claude/settings.json)",
+      "Edit(./.claude/hooks/**)"
+    ],
+    "deny": [
+      "Read(./**/.env)",
+      "Read(./**/.env.local)",
+      "Read(./**/.env.*.local)",
+      "Read(./**/.env.development)",
+      "Read(./**/.env.test)",
+      "Read(./**/.env.staging)",
+      "Read(./**/.env.production)",
+      "Read(./**/secrets/**)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Read(./**/*.p12)",
+      "Read(./**/*.pfx)",
+      "Edit(./graft/.cache/**)",
+      "Edit(./graft/.graph/**)",
+      "Edit(./**/node_modules/**)",
+      "Edit(./**/dist/**)",
+      "Edit(./**/package-lock.json)",
+      "Edit(./**/Cargo.lock)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-dev-server.mjs\"",
+            "timeout": 5,
+            "statusMessage": "Checking for a running dev server"
+          }
+        ]
+      }
+    ]
+  }
+}

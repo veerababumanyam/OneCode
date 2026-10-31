@@ -1,0 +1,131 @@
+import type { KeyboardEvent } from "react";
+import type { WorkspaceView, WorkspaceLoadResult } from "../api/types";
+import { en } from "../i18n/en";
+import { ChatConversation } from "./ChatConversation";
+import { Icon } from "./Icon";
+
+export type CenterTab = "editor" | "diff" | "browser";
+
+type WorkspaceCanvasProps = {
+  view: WorkspaceView;
+  centerTab: CenterTab;
+  onCenterTab: (tab: CenterTab) => void;
+  workspace: WorkspaceLoadResult | null;
+  loading: boolean;
+  error: string | null;
+};
+
+const tabs: { id: CenterTab; label: string; icon: "file" | "review" | "external" }[] = [
+  { id: "editor", label: en.center.editor, icon: "file" },
+  { id: "diff", label: en.center.diff, icon: "review" },
+  { id: "browser", label: en.center.browser, icon: "external" },
+];
+
+function EmptySurface({ title, children }: { title: string; children: string }) {
+  return (
+    <div className="empty-surface" role="status">
+      <span className="empty-surface-icon"><Icon name="folder" /></span>
+      <h2>{title}</h2>
+      <p>{children}</p>
+    </div>
+  );
+}
+
+export function WorkspaceCanvas({ view, centerTab, onCenterTab, workspace, loading, error }: WorkspaceCanvasProps) {
+  const title = en.screens[view];
+  const usesEditorTabs = view === "chat";
+  const selectedTab = view === "review" ? "diff" : centerTab;
+  let content: string = en.center.noRepository;
+  let emptyTitle: string = en.app.noWorkspaceTitle;
+
+  if (loading) {
+    content = en.app.loadingWorkspace;
+    emptyTitle = en.center.loadingTitle;
+  } else if (error) {
+    content = error;
+    emptyTitle = en.app.workspaceErrorTitle;
+  } else if (workspace?.kind === "unavailable") {
+    content = workspace.message;
+    emptyTitle = en.app.runtimeUnavailableTitle;
+  } else if (workspace?.kind === "development-fixture") {
+    content = workspace.notice;
+  }
+
+  if (view === "review") {
+    emptyTitle = en.center.noDiffTitle;
+    content = en.center.noDiff;
+  } else if (view === "context") {
+    emptyTitle = en.center.noContextTitle;
+    content = en.center.noContext;
+  } else if (view === "models") {
+    emptyTitle = en.center.noModelsTitle;
+    content = en.center.noModels;
+  } else if (view === "history") {
+    emptyTitle = en.center.noHistoryTitle;
+    content = en.center.noHistory;
+  } else if (view === "settings") {
+    emptyTitle = en.center.noSettingsTitle;
+    content = en.center.noSettings;
+  } else if (view !== "chat") {
+    emptyTitle = en.center.unavailable(title);
+    content = en.center.unavailableSurface;
+  } else if (!loading && !error && workspace?.kind === "development-fixture") {
+    emptyTitle = selectedTab === "editor" ? en.center.noFilesTitle : en.center.emptySurfaceTitle;
+    content = en.center.fixtureSurface;
+  }
+
+  return (
+    <section aria-label={en.center.workspaceLabel} className="workspace-surface">
+      <header className="surface-header">
+        <div className="surface-title">
+          <span className="overline">{workspace?.kind === "development-fixture" ? en.center.overlineFixture : en.center.overlineWorkspace}</span>
+          <h1>{title}</h1>
+        </div>
+        {usesEditorTabs && (
+          <div aria-label={en.center.tabsLabel} className="tab-list center-tabs" role="tablist">
+            {tabs.map((tab) => (
+              <button
+                aria-selected={selectedTab === tab.id}
+                aria-controls="center-workspace-panel"
+                className="tab-button"
+                id={`center-tab-${tab.id}`}
+                key={tab.id}
+                onClick={() => onCenterTab(tab.id)}
+                onKeyDown={handleTabKeyDown}
+                role="tab"
+                tabIndex={selectedTab === tab.id ? 0 : -1}
+                type="button"
+              >
+                <Icon name={tab.icon} />{tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {workspace?.kind === "development-fixture" && <span className="sample-badge">{en.app.uiSample}</span>}
+      </header>
+      <div aria-busy={loading} aria-labelledby={usesEditorTabs ? `center-tab-${selectedTab}` : undefined} className={`surface-content${view === "chat" && selectedTab === "editor" ? " surface-content-chat" : ""}`} id="center-workspace-panel" role="tabpanel">
+        {loading ? (
+          <div aria-label={en.app.loadingWorkspaceLabel} className="loading-state"><span className="loading-indicator" />{content}</div>
+        ) : view === "chat" && selectedTab === "editor" && workspace?.kind === "development-fixture" ? (
+          <ChatConversation />
+        ) : (
+          <EmptySurface title={emptyTitle}>{content}</EmptySurface>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function handleTabKeyDown(event: KeyboardEvent<HTMLElement>) {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  const tabsInList = Array.from(event.currentTarget.parentElement?.querySelectorAll<HTMLElement>('[role="tab"]') ?? []);
+  const currentIndex = tabsInList.indexOf(event.currentTarget);
+  const nextIndex = event.key === "Home"
+    ? 0
+    : event.key === "End"
+      ? tabsInList.length - 1
+      : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + tabsInList.length) % tabsInList.length;
+  event.preventDefault();
+  tabsInList[nextIndex]?.focus();
+  tabsInList[nextIndex]?.click();
+}
