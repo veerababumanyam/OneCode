@@ -35,7 +35,11 @@ export function MissionControl({ workspace, loading, error }: MissionControlProp
         <div>
           <span className="overline">WORKSPACE IDENTITY · SAMPLE</span>
           <h2 id="workspace-identity-title">{identity}</h2>
-          <p>{loading ? "Checking runtime status…" : error ?? "Repository is not connected · no files are available"}</p>
+          {error && !loading ? (
+            <p role="alert">{error}</p>
+          ) : (
+            <p>{loading ? "Checking runtime status…" : "Repository is not connected · no files are available"}</p>
+          )}
         </div>
         <span className="mission-status">{workspace?.kind === "development-fixture" ? "Mock" : "Not connected"}</span>
       </section>
