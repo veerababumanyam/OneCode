@@ -60,7 +60,7 @@ Adopt the **newest stable release** that is also safe:
 - **npm:** exact versions in `package.json` (no `^`/`~`), committed `package-lock.json`, and `npm ci` in CI and fresh checkouts. Never depend on `latest`, a branch, or a URL; a Git dependency needs a full commit SHA and an exception. Evaluate `ignore-scripts=true` per package (in that package's `.npmrc`) and list any package that genuinely needs install scripts.
 - **Cargo:** default caret requirements in `Cargo.toml`, committed `Cargo.lock` for every application and the workspace, `cargo deny` for licenses, advisories, duplicate majors, and allowed sources (crates.io only unless excepted). `cargo audit` may complement it.
 - **Local file dependencies** (the shared OneQuill design system) are pinned by the sibling checkout; record its version in [TECH-STACK](./TECH-STACK.md).
-- **Toolchains** are pinned: `rust-toolchain.toml` for Rust; the Node version in `engines` and a version file once CI exists.
+- **Toolchains** are pinned: `rust-toolchain.toml` for Rust; the Node version in `engines` and a version file once CI exists. The *application* version is a separate concern and already has its file: the root `VERSION` ([ADR-0022](./adr/0022-central-version-source.md)).
 - **CI actions** are pinned to a full commit SHA, not a tag.
 - **No build-time downloads** of code, models, or assets ([engineering standards §3.1](./ENGINEERING-STANDARDS.md#31-rust)).
 

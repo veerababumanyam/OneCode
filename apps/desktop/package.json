@@ -1,13 +1,15 @@
 {
   "name": "onecode-desktop-ui",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "npm run check:tokens && npm run typecheck && npm test && vite build",
+    "build": "npm run check:version && npm run check:tokens && npm run typecheck && npm test && vite build",
     "check:tokens": "node ../../../OneQuill/docs/design/onequill-design-system/token-lint.mjs src",
+    "check:version": "node ../../scripts/sync-version.mjs --check",
     "preview": "vite preview --host 127.0.0.1",
+    "sync:version": "node ../../scripts/sync-version.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

@@ -37,5 +37,6 @@ These map to [TRD §17](../TRD.md#17-open-technical-decisions) and the [PRD's op
 | 0018 | Knowledge map rendering and layout, linked-note storage, Markdown/wikilink export format | 18 | v1.5 Knowledge map (FR-119, FR-120) |
 | 0019 | OpenTelemetry-compatible instrumentation and telemetry export policy | 19 | Task 9, only if telemetry export is enabled |
 | 0021 | Encrypt portable knowledge backups and re-review restored records | 20 | v1.5 second brain (FR-130) |
+| 0022 | Proposed: root `VERSION` file as the single source of truth for the release version | — (not a §17 item) | Release identity; [engineering standards §11](../ENGINEERING-STANDARDS.md#11-release) |
 
 Task numbers refer to the [implementation plan](../../tasks/plan.md).

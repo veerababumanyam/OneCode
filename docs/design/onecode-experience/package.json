@@ -1,13 +1,15 @@
 {
   "name": "onecode-experience-mock",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "npm run check:tokens && vite build",
+    "build": "npm run check:version && npm run check:tokens && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "check:tokens": "node ../../../../OneQuill/docs/design/onequill-design-system/token-lint.mjs src"
+    "check:tokens": "node ../../../../OneQuill/docs/design/onequill-design-system/token-lint.mjs src",
+    "check:version": "node ../../../scripts/sync-version.mjs --check",
+    "sync:version": "node ../../../scripts/sync-version.mjs"
   },
   "dependencies": {
     "onequill-design-system": "file:../../../../OneQuill/docs/design/onequill-design-system"

@@ -146,7 +146,7 @@ Reviewers check, in this order: correctness against the linked requirement; secu
 
 ## 11. Release
 
-- Semantic versioning for the application and for every public schema.
+- Semantic versioning for the application and for every public schema. The root `VERSION` file is the single source of truth for the application version; every manifest carries a generated mirror, never a hand-edited one. `node scripts/sync-version.mjs --check` fails on drift and runs as `check:version` at the head of each package's build ([ADR-0022](./adr/0022-central-version-source.md)). A release is the commit that changes `VERSION` plus an annotated `vX.Y.Z` tag on that commit. Public schema versions (`schema_version`, §3.3) evolve independently of `VERSION`, because a schema must stay stable across application releases.
 - Release checklist (TRD §15): all required gates green on native CI per OS; signed and notarized packages; installer, update, and rollback smoke tests per OS; SBOM, license, and vulnerability reports reviewed; compatibility matrix and known limitations updated; release notes written for users; recovery and migration procedures verified.
 - Exceptions require an owner, rationale, scope, and expiry, and never weaken a security control (PRD FR-64).
 

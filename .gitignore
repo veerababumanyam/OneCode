@@ -16,6 +16,7 @@ coverage/
 # Personal agent settings (shared ones live in CLAUDE.md and .claude/settings.json).
 CLAUDE.local.md
 .claude/settings.local.json
+.qwen/
 
 # OS and editor noise.
 .DS_Store
