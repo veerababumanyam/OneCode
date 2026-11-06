@@ -9,7 +9,7 @@ Start with [INTENT.md](./INTENT.md); it says what wins when rules conflict.
 - `docs/` holds the PRD, TRD, ADRs, and standards; it is most of the repository. [docs/README.md](./docs/README.md) says which document owns what.
 - `apps/desktop/` is the production desktop UI: Tauri 2 + React/TypeScript per [ADR-0003](./docs/adr/0003-desktop-ui-and-bridge.md). It currently runs on a development fixture adapter; the Tauri shell and Rust core do not exist yet.
 - `docs/design/onecode-experience/` is a sample-data prototype (Vite + vanilla JS). Production code must not import from it.
-- There is no Cargo workspace yet. Do not scaffold crates, CI, or toolchain files unless the task asks; the layout is pending ADR-0002.
+- There is no Cargo workspace yet. Do not scaffold crates, CI, or toolchain files unless the task asks. The layout is no longer pending: [ADR-0002](./docs/adr/0002-process-model.md) is accepted and fixes a root Cargo workspace with `crates/onecode-<component>`, `apps/desktop/src-tauri` (package `onecode-desktop`), `crates/onecode-cli`, and `crates/onecode-model-worker`; `desktop` and `cli` depend only on `onecode-api`. The crate-by-crate split is in [engineering standards §2](./docs/ENGINEERING-STANDARDS.md#2-repository-layout-proposed-pending-adr-0002).
 - The root [VERSION](./VERSION) file is the single source of truth for the application version ([ADR-0022](./docs/adr/0022-central-version-source.md)). Manifests mirror it; see the version rule below.
 
 ## Commands

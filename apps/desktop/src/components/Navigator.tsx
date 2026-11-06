@@ -11,7 +11,7 @@ type NavigatorProps = {
   hidden: boolean;
 };
 
-const groups: { label: string; items: { view: WorkspaceView; label: string; icon: IconName }[] }[] = [
+export const navGroups: { label: string; items: { view: WorkspaceView; label: string; icon: IconName }[] }[] = [
   {
     label: en.navigation.groups.workspace,
     items: [
@@ -64,7 +64,7 @@ export function Navigator({ activeView, collapsed, isMobile, onClose, onNavigate
         )}
       </header>
       <nav aria-label={en.navigation.ariaLabel} className="navigator-links">
-        {groups.map((group) => (
+        {navGroups.map((group) => (
           <section aria-label={group.label} className="nav-group" key={group.label}>
             <h2 className="nav-group-title">{group.label}</h2>
             {group.items.map((item) => (
@@ -72,6 +72,7 @@ export function Navigator({ activeView, collapsed, isMobile, onClose, onNavigate
                 aria-current={activeView === item.view ? "page" : undefined}
                 aria-label={collapsed ? item.label : undefined}
                 className="nav-item"
+                data-tip={collapsed ? item.label : undefined}
                 key={item.view}
                 onClick={() => onNavigate(item.view)}
                 type="button"
@@ -83,11 +84,6 @@ export function Navigator({ activeView, collapsed, isMobile, onClose, onNavigate
           </section>
         ))}
       </nav>
-      <div className="navigator-footer">
-        <span className="overline">{en.navigation.footerLabel}</span>
-        <strong>{en.navigation.footerState}</strong>
-        <small>{en.navigation.footerDetail}</small>
-      </div>
     </aside>
   );
 }

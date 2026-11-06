@@ -20,13 +20,14 @@ describe("OneCode production shell", () => {
     expect(result.kind).toBe("development-fixture");
   });
 
-  it("keeps the navigator, mission control, bottom panel, and inspector in the shell", async () => {
+  it("keeps the navigator, mission control, and inspector in the shell, with runtime tabs in the inspector", async () => {
     render(<App api={createDevelopmentFixtureAdapter()} />);
 
     expect(await screen.findByRole("navigation", { name: en.navigation.ariaLabel })).toBeTruthy();
     expect(screen.getByRole("complementary", { name: en.navigation.applicationNavigator })).toBeTruthy();
     expect(screen.getByRole("region", { name: en.screens.home })).toBeTruthy();
-    expect(screen.getByRole("region", { name: en.bottom.ariaLabel })).toBeTruthy();
+    // The bottom bar was folded into the inspector; no separate panel region remains.
+    expect(screen.queryByRole("region", { name: en.bottom.ariaLabel })).toBeNull();
     expect(screen.getAllByText(en.app.fixture)).toHaveLength(2);
 
     // Mission Control keeps the inspector out of the accessibility tree.
@@ -35,6 +36,7 @@ describe("OneCode production shell", () => {
     openChatView();
     expect(await screen.findByRole("region", { name: en.center.workspaceLabel })).toBeTruthy();
     expect(screen.getByRole("complementary", { name: "Workspace inspector" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: en.bottom.terminal })).toBeTruthy();
   });
 
   it("navigates between chat, review, context, models, history, and settings", async () => {
@@ -61,7 +63,7 @@ describe("OneCode production shell", () => {
     const composer = await screen.findByRole("textbox", { name: en.companion.messageLabel });
 
     fireEvent.change(composer, { target: { value: "Explain the retry policy" } });
-    fireEvent.click(screen.getByRole("button", { name: en.companion.previewRequest }));
+    fireEvent.click(screen.getByRole("button", { name: en.composer.send }));
 
     expect(await screen.findByText("Explain the retry policy")).toBeTruthy();
     expect(screen.getByText(en.companion.localPreviewNotice)).toBeTruthy();

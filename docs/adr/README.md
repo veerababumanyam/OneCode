@@ -18,10 +18,10 @@ These map to [TRD §17](../TRD.md#17-open-technical-decisions) and the [PRD's op
 | ADR | Decision | TRD §17 item | Blocks |
 |---|---|---|---|
 | 0001 | Minimum supported OS versions, packaging, signing and notarization, update channel | 9 | Task 1, Task 2 |
-| 0002 | Process model: in-process modules versus local IPC service boundaries | 2 | Task 2 |
+| 0002 | Process model: in-process modules versus local IPC service boundaries | 2 | Accepted: [ADR-0002](./0002-process-model.md); Task 2 |
 | 0003 | Desktop UI framework and UI-to-core protocol | 3 | Accepted: [ADR-0003](./0003-desktop-ui-and-bridge.md); Task 3, Task 10 |
 | 0004 | Sandbox strategy and per-OS isolation guarantees (including WSL) | 7 | Task 3, Task 6 |
-| 0005 | Task and index storage engine, encryption, retention, and migration | 6 | Task 3, Task 4 |
+| 0005 | Task and index storage engine, encryption, retention, and migration | 6 | Accepted: [ADR-0005](./0005-storage-engine.md); Task 3, Task 4 |
 | 0006 | Default embedding model bundled with the app (redistribution license, size, hardware floor), catalog and format policy, vector index | 1 | Task 5 |
 | 0007 | Offline model-bundle container and signature formats, trusted-key lifecycle | 10 | Task 5 |
 | 0008 | First language and framework support matrix | 4 | Task 4 |
@@ -36,7 +36,8 @@ These map to [TRD §17](../TRD.md#17-open-technical-decisions) and the [PRD's op
 | 0017 | Proposed: LadybugDB graph store; graph schema versioning, community algorithm, repository-map ranking | 17 | Task 4 |
 | 0018 | Knowledge map rendering and layout, linked-note storage, Markdown/wikilink export format | 18 | v1.5 Knowledge map (FR-119, FR-120) |
 | 0019 | OpenTelemetry-compatible instrumentation and telemetry export policy | 19 | Task 9, only if telemetry export is enabled |
-| 0021 | Encrypt portable knowledge backups and re-review restored records | 20 | v1.5 second brain (FR-130) |
+| 0020 | Contract casing and TypeScript bindings: camelCase JSON contracts with ts-rs-generated types | — (not a §17 item) | Accepted: [ADR-0020](./0020-contract-casing-and-bindings.md); Task 2, Task 3 |
+| 0021 | Proposed: encrypt portable knowledge backups and re-review restored records | 20 | v1.5 second brain (FR-130) |
 | 0022 | Proposed: root `VERSION` file as the single source of truth for the release version | — (not a §17 item) | Release identity; [engineering standards §11](../ENGINEERING-STANDARDS.md#11-release) |
 
 Task numbers refer to the [implementation plan](../../tasks/plan.md).

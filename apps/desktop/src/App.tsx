@@ -1,17 +1,32 @@
 import { useEffect, useState } from "react";
 import type { DesktopApi, RequestPreviewResult, WorkspaceLoadResult, WorkspaceView } from "./api/types";
-import { BottomPanel } from "./components/BottomPanel";
-import { Icon } from "./components/Icon";
+import { CommandPalette } from "./components/CommandPalette";
+import { Icon, type IconName } from "./components/Icon";
 import { MissionControl } from "./components/MissionControl";
 import { Navigator } from "./components/Navigator";
 import { WorkspaceInspector, type InspectorTab } from "./components/WorkspaceInspector";
-import { WorkspaceCanvas, type CenterTab } from "./components/WorkspaceCanvas";
+import { WorkspaceCanvas, handleTabKeyDown, type CenterTab } from "./components/WorkspaceCanvas";
 import { en } from "./i18n/en";
 
 type AppProps = { api: DesktopApi };
 
+const centerTabs: { id: CenterTab; label: string; icon: IconName }[] = [
+  { id: "editor", label: en.center.editor, icon: "file" },
+  { id: "diff", label: en.center.diff, icon: "review" },
+  { id: "browser", label: en.center.browser, icon: "external" },
+];
+
+function initialViewFromLocation(): WorkspaceView {
+  const requested = new URLSearchParams(window.location.search).get("view");
+  return requested !== null && requested in en.screens ? (requested as WorkspaceView) : "home";
+}
+
+function initialPaletteOpen(): boolean {
+  return new URLSearchParams(window.location.search).get("palette") === "1";
+}
+
 export function App({ api }: AppProps) {
-  const [view, setView] = useState<WorkspaceView>("home");
+  const [view, setView] = useState<WorkspaceView>(initialViewFromLocation);
   const [centerTab, setCenterTab] = useState<CenterTab>("editor");
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("files");
   const [workspace, setWorkspace] = useState<WorkspaceLoadResult | null>(null);
@@ -21,6 +36,7 @@ export function App({ api }: AppProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [navigatorOpen, setNavigatorOpen] = useState(true);
   const [inspectorOpen, setInspectorOpen] = useState(true);
+  const [paletteOpen, setPaletteOpen] = useState(initialPaletteOpen);
 
   useEffect(() => {
     let active = true;
@@ -65,6 +81,17 @@ export function App({ api }: AppProps) {
     return () => window.removeEventListener("keydown", closeDrawers);
   }, [isMobile]);
 
+  useEffect(() => {
+    function togglePalette(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setPaletteOpen((open) => !open);
+      }
+    }
+    window.addEventListener("keydown", togglePalette);
+    return () => window.removeEventListener("keydown", togglePalette);
+  }, []);
+
   function navigate(nextView: WorkspaceView) {
     setView(nextView);
     if (nextView === "chat") setCenterTab("editor");
@@ -72,6 +99,13 @@ export function App({ api }: AppProps) {
     if (nextView === "home") setInspectorOpen(false);
     else setInspectorOpen(true);
     if (isMobile) setNavigatorOpen(false);
+  }
+
+  function startTask() {
+    navigate("chat");
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLTextAreaElement>(".composer textarea")?.focus();
+    });
   }
 
   async function previewRequest(text: string): Promise<RequestPreviewResult> {
@@ -82,9 +116,10 @@ export function App({ api }: AppProps) {
 
   const isFixture = workspace?.kind === "development-fixture";
   const offline = !loading && (apiError !== null || workspace?.kind === "unavailable");
+  const connectivityLabel = isFixture ? en.app.fixture : offline ? en.app.runtimeUnavailable : en.app.notConnected;
 
   return (
-    <div className={`app-shell${!navigatorOpen && !isMobile ? " navigator-collapsed" : ""}${(!inspectorOpen || view === "home") && !isMobile ? " inspector-collapsed" : ""}`}>
+    <div className={`app-shell${!navigatorOpen && !isMobile ? " navigator-collapsed" : ""}${(!inspectorOpen || view === "home") && !isMobile ? " companion-collapsed" : ""}`}>
       <a className="skip-link" href="#workspace" onClick={() => document.getElementById("workspace")?.focus()}>
         {en.app.skipToWorkspace}
       </a>
@@ -110,12 +145,47 @@ export function App({ api }: AppProps) {
           </button>
           <div className="workspace-breadcrumb">
             <span>{workspace?.kind === "development-fixture" ? workspace.projectName : en.app.noWorkspace}</span>
-            <span aria-hidden="true">/</span>
-            <strong>{en.screens[view]}</strong>
+            {view !== "home" && (
+              <>
+                <span aria-hidden="true">/</span>
+                <h1 className="breadcrumb-view">{en.screens[view]}</h1>
+              </>
+            )}
           </div>
-          <span className={`connectivity-badge${offline ? " is-offline" : ""}`}>
-            <span aria-hidden="true" className="status-dot" />
-            {isFixture ? en.app.fixture : offline ? en.app.runtimeUnavailable : en.app.notConnected}
+          {view === "chat" && (
+            <div aria-label={en.center.tabsLabel} className="tab-list topbar-tabs" role="tablist">
+              {centerTabs.map((tab) => (
+                <button
+                  aria-controls="center-workspace-panel"
+                  aria-selected={centerTab === tab.id}
+                  className="tab-button tab-button--icon"
+                  data-tip={tab.label}
+                  id={`center-tab-${tab.id}`}
+                  key={tab.id}
+                  onClick={() => setCenterTab(tab.id)}
+                  onKeyDown={handleTabKeyDown}
+                  role="tab"
+                  tabIndex={centerTab === tab.id ? 0 : -1}
+                  type="button"
+                >
+                  <Icon name={tab.icon} />
+                  <span className="visually-hidden">{tab.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            aria-label={en.palette.title}
+            className="icon-button"
+            data-tip={en.palette.title}
+            onClick={() => setPaletteOpen(true)}
+            type="button"
+          >
+            <Icon name="search" />
+          </button>
+          <span className={`status-chip connectivity-chip${offline ? " is-offline" : ""}`} data-tip={connectivityLabel}>
+            <Icon name="signal" />
+            <span className="visually-hidden">{connectivityLabel}</span>
           </span>
           <button
             aria-expanded={inspectorOpen && view !== "home"}
@@ -130,20 +200,18 @@ export function App({ api }: AppProps) {
           </button>
         </header>
         {view === "home" ? (
-          <MissionControl error={apiError} loading={loading} workspace={workspace} />
+          <MissionControl error={apiError} loading={loading} onStart={startTask} workspace={workspace} />
         ) : (
           <WorkspaceCanvas
             centerTab={centerTab}
             error={apiError}
             loading={loading}
-            onCenterTab={setCenterTab}
             onPreview={previewRequest}
             preview={preview}
             view={view}
             workspace={workspace}
           />
         )}
-        <BottomPanel />
         <RuntimeStatus isFixture={isFixture} offline={offline} />
       </main>
       <WorkspaceInspector
@@ -154,26 +222,39 @@ export function App({ api }: AppProps) {
         onTabChange={setInspectorTab}
         preview={preview}
       />
+      <CommandPalette
+        onClose={() => setPaletteOpen(false)}
+        onNavigate={navigate}
+        open={paletteOpen}
+      />
     </div>
   );
 }
 
 function RuntimeStatus({ isFixture, offline }: { isFixture: boolean; offline: boolean }) {
-  const values = [
-    { label: en.app.connectivity, value: offline ? en.app.unavailable : en.app.notConnected },
-    { label: en.app.conversationMode, value: en.app.notAvailable },
-    { label: en.app.permissionMode, value: en.app.notAvailable },
-    { label: en.app.model, value: en.app.notAvailable },
-    { label: en.app.sandbox, value: en.app.notAvailable },
-    { label: en.app.trust, value: en.app.unknown },
-    { label: en.app.index, value: en.app.notReported },
+  const chips: { icon: IconName; label: string; value: string }[] = [
+    { icon: "signal", label: en.app.connectivity, value: offline ? en.app.unavailable : en.app.notConnected },
+    { icon: "chat", label: en.app.conversationMode, value: en.app.notAvailable },
+    { icon: "shield", label: en.app.permissionMode, value: en.app.notAvailable },
+    { icon: "models", label: en.app.model, value: en.app.notAvailable },
+    { icon: "lock", label: en.app.sandbox, value: en.app.notAvailable },
+    { icon: "review", label: en.app.trust, value: en.app.unknown },
+    { icon: "search", label: en.app.index, value: en.app.notReported },
   ];
 
   return (
     <footer aria-label={en.app.status} className="runtime-status">
-      {isFixture && <span className="status-source">{en.app.fixture}</span>}
-      {values.map(({ label, value }) => (
-        <span className="status-item" key={label}><strong>{label}:</strong> {value}</span>
+      {isFixture && (
+        <span className="status-chip status-chip--fixture" data-tip={en.app.fixture}>
+          <Icon name="brand" />
+          <span className="visually-hidden">{en.app.fixture}</span>
+        </span>
+      )}
+      {chips.map(({ icon, label, value }) => (
+        <span className="status-chip" data-tip={`${label}: ${value}`} key={label}>
+          <Icon name={icon} />
+          <span className="visually-hidden">{label}: {value}</span>
+        </span>
       ))}
     </footer>
   );

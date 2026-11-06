@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { en } from "../i18n/en";
 import { WorkspaceInspector } from "./WorkspaceInspector";
 
 const baseProps = {
@@ -48,5 +49,14 @@ describe("WorkspaceInspector", () => {
     render(<WorkspaceInspector {...baseProps} activeTab="preview" />);
 
     expect(screen.getByText("No preview prepared. No request or tool was sent.")).toBeTruthy();
+  });
+
+  it("folds the runtime panels into the inspector as tabs", () => {
+    render(<WorkspaceInspector {...baseProps} activeTab="terminal" />);
+
+    expect(screen.getByRole("tab", { name: en.bottom.terminal })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: en.bottom.output })).toBeTruthy();
+    expect(screen.getByText(en.bottom.unavailable(en.bottom.terminal))).toBeTruthy();
+    expect(screen.getByText(en.bottom.noProcess)).toBeTruthy();
   });
 });

@@ -9,19 +9,12 @@ export type CenterTab = "editor" | "diff" | "browser";
 type WorkspaceCanvasProps = {
   view: WorkspaceView;
   centerTab: CenterTab;
-  onCenterTab: (tab: CenterTab) => void;
   workspace: WorkspaceLoadResult | null;
   loading: boolean;
   error: string | null;
   preview: RequestPreviewResult | null;
   onPreview: (text: string) => Promise<RequestPreviewResult>;
 };
-
-const tabs: { id: CenterTab; label: string; icon: "file" | "review" | "external" }[] = [
-  { id: "editor", label: en.center.editor, icon: "file" },
-  { id: "diff", label: en.center.diff, icon: "review" },
-  { id: "browser", label: en.center.browser, icon: "external" },
-];
 
 function EmptySurface({ title, children }: { title: string; children: string }) {
   return (
@@ -33,7 +26,7 @@ function EmptySurface({ title, children }: { title: string; children: string }) 
   );
 }
 
-export function WorkspaceCanvas({ view, centerTab, onCenterTab, workspace, loading, error, preview, onPreview }: WorkspaceCanvasProps) {
+export function WorkspaceCanvas({ view, centerTab, workspace, loading, error, preview, onPreview }: WorkspaceCanvasProps) {
   const title = en.screens[view];
   const usesEditorTabs = view === "chat";
   const selectedTab = view === "review" ? "diff" : centerTab;
@@ -78,33 +71,6 @@ export function WorkspaceCanvas({ view, centerTab, onCenterTab, workspace, loadi
 
   return (
     <section aria-label={en.center.workspaceLabel} className="workspace-surface">
-      <header className="surface-header">
-        <div className="surface-title">
-          <span className="overline">{workspace?.kind === "development-fixture" ? en.center.overlineFixture : en.center.overlineWorkspace}</span>
-          <h1>{title}</h1>
-        </div>
-        {usesEditorTabs && (
-          <div aria-label={en.center.tabsLabel} className="tab-list center-tabs" role="tablist">
-            {tabs.map((tab) => (
-              <button
-                aria-selected={selectedTab === tab.id}
-                aria-controls="center-workspace-panel"
-                className="tab-button"
-                id={`center-tab-${tab.id}`}
-                key={tab.id}
-                onClick={() => onCenterTab(tab.id)}
-                onKeyDown={handleTabKeyDown}
-                role="tab"
-                tabIndex={selectedTab === tab.id ? 0 : -1}
-                type="button"
-              >
-                <Icon name={tab.icon} />{tab.label}
-              </button>
-            ))}
-          </div>
-        )}
-        {workspace?.kind === "development-fixture" && <span className="sample-badge">{en.app.uiSample}</span>}
-      </header>
       <div aria-busy={loading} aria-labelledby={usesEditorTabs ? `center-tab-${selectedTab}` : undefined} className={`surface-content${view === "chat" && selectedTab === "editor" ? " surface-content-chat" : ""}`} id="center-workspace-panel" role="tabpanel">
         {loading ? (
           <div aria-label={en.app.loadingWorkspaceLabel} className="loading-state"><span className="loading-indicator" />{content}</div>

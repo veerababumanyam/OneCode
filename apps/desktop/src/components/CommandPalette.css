@@ -1,0 +1,84 @@
+/* Floating chrome, so Liquid Glass is allowed here (DESIGN-GUIDELINES §2.9). */
+.palette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--oq-layer-overlay);
+  display: grid;
+  place-items: start center;
+  padding-block-start: var(--oq-space-24);
+  background: var(--oq-glass-soft);
+  -webkit-backdrop-filter: var(--oq-backdrop-command-overlay);
+  backdrop-filter: var(--oq-backdrop-command-overlay);
+}
+.palette {
+  display: grid;
+  gap: var(--oq-space-8);
+  inline-size: min(100%, var(--oq-size-480));
+  margin-inline: var(--oq-space-16);
+  padding: var(--oq-space-8);
+  border-radius: var(--oq-radius-xl);
+  background: var(--oq-glass-fill);
+  -webkit-backdrop-filter: var(--oq-backdrop-command-dialog);
+  backdrop-filter: var(--oq-backdrop-command-dialog);
+  box-shadow: var(--oq-shadow-command-dialog);
+}
+.palette-input {
+  display: flex;
+  align-items: center;
+  gap: var(--oq-space-8);
+  padding: var(--oq-space-8) var(--oq-space-12);
+}
+.palette-input .icon { inline-size: var(--oq-size-16); block-size: var(--oq-size-16); flex: none; color: var(--oq-text-muted); }
+.palette-input input {
+  flex: 1;
+  min-inline-size: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--oq-text);
+  font-size: var(--oq-text-sm);
+}
+.palette-input input::placeholder { color: var(--oq-text-muted); opacity: 1; }
+.palette-list {
+  display: grid;
+  gap: var(--oq-space-4);
+  max-block-size: var(--oq-size-320);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+}
+.palette-item {
+  display: flex;
+  inline-size: 100%;
+  align-items: center;
+  gap: var(--oq-space-12);
+  padding: var(--oq-space-8) var(--oq-space-12);
+  border: 0;
+  border-radius: var(--oq-radius-sm);
+  background: transparent;
+  color: var(--oq-text-secondary);
+  font-size: var(--oq-text-ui);
+  text-align: start;
+}
+.palette-item .icon { inline-size: var(--oq-size-16); block-size: var(--oq-size-16); flex: none; }
+.palette-item.is-active { background: var(--oq-brand-soft); color: var(--oq-brand-strong); }
+.palette-empty { padding: var(--oq-space-12); color: var(--oq-text-muted); font-size: var(--oq-text-xs); }
+.palette-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--oq-space-8);
+  padding: var(--oq-space-4) var(--oq-space-12);
+  color: var(--oq-text-muted);
+  font-size: var(--oq-text-xs);
+}
+.palette-key {
+  padding-inline: var(--oq-space-4);
+  border: var(--oq-border-hairline) solid var(--oq-line-strong);
+  border-radius: var(--oq-radius-2xs);
+  font-family: var(--oq-font-mono);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .palette-overlay, .palette { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--oq-surface-raised); }
+}

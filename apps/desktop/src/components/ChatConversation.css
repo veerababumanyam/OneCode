@@ -9,23 +9,10 @@
   min-inline-size: 0;
   min-block-size: 0;
   flex: 1;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
   overflow: hidden;
   background: var(--oq-bg);
 }
-.chat-sample-banner {
-  display: flex;
-  min-block-size: var(--oq-size-32);
-  align-items: center;
-  gap: var(--oq-space-8);
-  padding-inline: var(--oq-space-20);
-  border-block-end: var(--oq-border-hairline) solid var(--oq-line);
-  color: var(--oq-warning);
-  background: var(--oq-surface-inset);
-  font-size: var(--oq-text-xs);
-  font-weight: var(--oq-weight-strong);
-}
-.chat-sample-dot { inline-size: var(--oq-size-8); block-size: var(--oq-size-8); flex: none; border-radius: var(--oq-radius-full); background: var(--oq-warning); }
 .chat-transcript {
   display: grid;
   inline-size: 100%;
@@ -50,6 +37,11 @@
 .chat-session-label > span { inline-size: var(--oq-size-4); block-size: var(--oq-size-4); border-radius: var(--oq-radius-full); background: var(--oq-line-strong); }
 .chat-message { display: grid; min-inline-size: 0; grid-template-columns: var(--oq-size-32) minmax(0, 1fr); align-items: start; gap: var(--oq-space-12); }
 .chat-message-user { padding-block-end: var(--oq-space-4); }
+.chat-message-user .chat-message-body {
+  padding: var(--oq-space-12) var(--oq-space-16);
+  border-radius: var(--oq-radius-lg);
+  background: var(--oq-brand-soft);
+}
 .chat-avatar { display: grid; inline-size: var(--oq-size-32); block-size: var(--oq-size-32); flex: none; place-items: center; border: var(--oq-border-hairline) solid var(--oq-line); border-radius: var(--oq-radius-sm); color: var(--oq-text-secondary); background: var(--oq-surface-raised); font-size: var(--oq-text-xs); font-weight: var(--oq-weight-strong); }
 .chat-avatar-brand { border-color: var(--oq-brand-soft); color: var(--oq-brand); background: var(--oq-brand-soft); }
 .chat-avatar .icon { inline-size: var(--oq-size-20); block-size: var(--oq-size-20); }
@@ -87,7 +79,6 @@
 .chat-diff-notice .icon { inline-size: var(--oq-size-12); block-size: var(--oq-size-12); flex: none; margin-block-start: var(--oq-space-2); }
 
 @media (max-width: 480px) {
-  .chat-sample-banner { padding-inline: var(--oq-space-12); }
   .chat-transcript { gap: var(--oq-space-16); padding: var(--oq-space-16) var(--oq-space-12) var(--oq-space-24); }
   .chat-message { grid-template-columns: var(--oq-size-28) minmax(0, 1fr); gap: var(--oq-space-8); }
   .chat-avatar { inline-size: var(--oq-size-28); block-size: var(--oq-size-28); }

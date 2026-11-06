@@ -132,15 +132,20 @@ export function ConversationCompanion({
         )}
       </div>
       <form className="composer" onSubmit={handleSubmit}>
-        <label className="visually-hidden" htmlFor="conversation-draft">{en.companion.messageLabel}</label>
+        <label className="visually-hidden" htmlFor="companion-draft">{en.companion.messageLabel}</label>
         <textarea
-          id="conversation-draft"
+          id="companion-draft"
           onChange={(event) => setDraft(event.target.value)}
           placeholder={en.companion.messagePlaceholder}
           rows={3}
           value={draft}
         />
         <div className="composer-footer">
+          <span className="status-chip" data-tip={en.app.model}>
+            <Icon name="models" />
+            <span className="visually-hidden">{en.app.model}: </span>
+            <span className="status-chip-value">{en.app.notReported}</span>
+          </span>
           <p>{en.companion.composerHint}</p>
           <button aria-label={en.companion.previewRequest} className="primary-button" disabled={!draft.trim()} type="submit">
             {en.companion.preview} <Icon name="arrow" />
