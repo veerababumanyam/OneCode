@@ -28,4 +28,6 @@ export const chatEn = {
     { path: "src/webhooks/client.test.ts", detail: "Example test file" },
   ],
   diffNotice: "Example file list only · no diff was loaded or applied",
+  diffTitle: "Diff preview",
+  diffStatus: "Sample only · not applied",
 } as const;

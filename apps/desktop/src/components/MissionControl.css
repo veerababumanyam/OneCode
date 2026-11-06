@@ -1,0 +1,56 @@
+.mission-control {
+  display: grid;
+  min-inline-size: 0;
+  align-content: start;
+  gap: var(--oq-space-20);
+  overflow: auto;
+  padding: var(--oq-space-24);
+}
+.mission-header, .mission-card-heading {
+  display: flex;
+  min-inline-size: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--oq-space-16);
+}
+.mission-header h1 { margin: var(--oq-space-4) 0 0; font-size: var(--oq-text-title); font-weight: var(--oq-weight-headline); letter-spacing: var(--oq-tracking-heading); }
+.mission-header p, .mission-identity p, .mission-task-summary { margin: var(--oq-space-4) 0 0; color: var(--oq-text-muted); font-size: var(--oq-text-sm); line-height: var(--oq-leading-body); }
+.mission-identity, .mission-card {
+  min-inline-size: 0;
+  padding: var(--oq-space-16);
+  border: var(--oq-border-hairline) solid var(--oq-line);
+  border-radius: var(--oq-radius-md);
+  background: var(--oq-surface);
+}
+.mission-identity { display: flex; align-items: center; gap: var(--oq-space-12); }
+.mission-identity > div:nth-child(2) { min-inline-size: 0; flex: 1; }
+.mission-identity-mark { display: grid; inline-size: var(--oq-size-40); block-size: var(--oq-size-40); flex: none; place-items: center; border-radius: var(--oq-radius-sm); color: var(--oq-brand); background: var(--oq-brand-soft); }
+.mission-identity h2, .mission-card-heading h2 { margin: var(--oq-space-4) 0 0; color: var(--oq-text); font-size: var(--oq-text-sm); font-weight: var(--oq-weight-strong); }
+.mission-identity p { overflow-wrap: anywhere; }
+.mission-status { display: inline-flex; min-block-size: var(--oq-size-24); flex: none; align-items: center; padding-inline: var(--oq-space-8); border: var(--oq-border-hairline) solid var(--oq-line-strong); border-radius: var(--oq-radius-full); color: var(--oq-text-secondary); background: var(--oq-surface-inset); font-size: var(--oq-text-xs); }
+.mission-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: var(--oq-space-16); }
+.mission-card { display: grid; gap: var(--oq-space-16); }
+.mission-card-heading .icon { inline-size: var(--oq-size-16); block-size: var(--oq-size-16); flex: none; color: var(--oq-text-muted); }
+.mission-task { grid-row: span 2; }
+.mission-plan { display: grid; gap: var(--oq-space-12); padding: var(--oq-space-12); border: var(--oq-border-hairline) solid var(--oq-line); border-radius: var(--oq-radius-sm); background: var(--oq-surface-inset); }
+.mission-plan h3 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--oq-space-8); margin: 0; font-size: var(--oq-text-xs); font-weight: var(--oq-weight-strong); }
+.mission-plan h3 span { color: var(--oq-text-muted); font-weight: var(--oq-weight-body); }
+.mission-plan ol, .mission-checks { display: grid; gap: var(--oq-space-8); margin: 0; padding: 0; list-style: none; }
+.mission-plan li { display: grid; grid-template-columns: var(--oq-size-20) minmax(0, 1fr) auto; align-items: center; gap: var(--oq-space-8); color: var(--oq-text-secondary); font-size: var(--oq-text-xs); }
+.mission-plan li > span:first-child { display: grid; inline-size: var(--oq-size-20); block-size: var(--oq-size-20); place-items: center; border: var(--oq-border-hairline) solid var(--oq-line-strong); border-radius: var(--oq-radius-full); color: var(--oq-text-muted); }
+.mission-plan li strong { color: var(--oq-text-muted); font-size: var(--oq-text-xs); font-weight: var(--oq-weight-body); }
+.mission-checks li { display: flex; min-inline-size: 0; justify-content: space-between; gap: var(--oq-space-12); padding-block-end: var(--oq-space-8); border-block-end: var(--oq-border-hairline) solid var(--oq-line); color: var(--oq-text-muted); font-size: var(--oq-text-xs); }
+.mission-checks li:last-child { padding-block-end: 0; border-block-end: 0; }
+.mission-checks strong { color: var(--oq-text-secondary); font-weight: var(--oq-weight-strong); text-align: end; }
+
+@media (max-width: 768px) {
+  .mission-control { padding: var(--oq-space-16); }
+  .mission-grid { grid-template-columns: minmax(0, 1fr); }
+  .mission-task { grid-row: auto; }
+}
+@media (max-width: 480px) {
+  .mission-identity { align-items: flex-start; flex-wrap: wrap; }
+  .mission-status { margin-inline-start: var(--oq-size-48); }
+  .mission-plan li { grid-template-columns: var(--oq-size-20) minmax(0, 1fr); }
+  .mission-plan li strong { grid-column: 2; }
+}

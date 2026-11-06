@@ -33,8 +33,9 @@ These map to [TRD §17](../TRD.md#17-open-technical-decisions) and the [PRD's op
 | 0014 | Source-control implementation and credential-helper handling | 14 | Task 10 |
 | 0015 | Language-server distribution and trust model; debugger-adapter scope | 15 | Task 10 |
 | 0016 | Hook, rule, and custom-command definition formats and compatibility | 16 | Task 11 |
-| 0017 | Code knowledge graph store and query engine, graph schema versioning, community algorithm, repository-map ranking | 17 | Task 4 |
+| 0017 | Proposed: LadybugDB graph store; graph schema versioning, community algorithm, repository-map ranking | 17 | Task 4 |
 | 0018 | Knowledge map rendering and layout, linked-note storage, Markdown/wikilink export format | 18 | v1.5 Knowledge map (FR-119, FR-120) |
 | 0019 | OpenTelemetry-compatible instrumentation and telemetry export policy | 19 | Task 9, only if telemetry export is enabled |
+| 0021 | Encrypt portable knowledge backups and re-review restored records | 20 | v1.5 second brain (FR-130) |
 
 Task numbers refer to the [implementation plan](../../tasks/plan.md).

@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from "react";
-import type { WorkspaceView, WorkspaceLoadResult } from "../api/types";
+import type { RequestPreviewResult, WorkspaceView, WorkspaceLoadResult } from "../api/types";
 import { en } from "../i18n/en";
 import { ChatConversation } from "./ChatConversation";
 import { Icon } from "./Icon";
@@ -13,6 +13,8 @@ type WorkspaceCanvasProps = {
   workspace: WorkspaceLoadResult | null;
   loading: boolean;
   error: string | null;
+  preview: RequestPreviewResult | null;
+  onPreview: (text: string) => Promise<RequestPreviewResult>;
 };
 
 const tabs: { id: CenterTab; label: string; icon: "file" | "review" | "external" }[] = [
@@ -31,7 +33,7 @@ function EmptySurface({ title, children }: { title: string; children: string }) 
   );
 }
 
-export function WorkspaceCanvas({ view, centerTab, onCenterTab, workspace, loading, error }: WorkspaceCanvasProps) {
+export function WorkspaceCanvas({ view, centerTab, onCenterTab, workspace, loading, error, preview, onPreview }: WorkspaceCanvasProps) {
   const title = en.screens[view];
   const usesEditorTabs = view === "chat";
   const selectedTab = view === "review" ? "diff" : centerTab;
@@ -107,12 +109,36 @@ export function WorkspaceCanvas({ view, centerTab, onCenterTab, workspace, loadi
         {loading ? (
           <div aria-label={en.app.loadingWorkspaceLabel} className="loading-state"><span className="loading-indicator" />{content}</div>
         ) : view === "chat" && selectedTab === "editor" && workspace?.kind === "development-fixture" ? (
-          <ChatConversation />
+          <ChatConversation onPreview={onPreview} preview={preview} />
+        ) : view === "chat" && selectedTab === "diff" && workspace?.kind === "development-fixture" ? (
+          <IllustrativeDiff />
+        ) : view === "chat" && selectedTab === "browser" && workspace?.kind === "development-fixture" ? (
+          <IllustrativeBrowser />
         ) : (
           <EmptySurface title={emptyTitle}>{content}</EmptySurface>
         )}
       </div>
     </section>
+  );
+}
+
+function IllustrativeDiff() {
+  return (
+    <div className="empty-surface" role="status">
+      <span className="empty-surface-icon"><Icon name="review" /></span>
+      <h2>Diff preview · sample only</h2>
+      <p>No repository is connected and no files have changed. No diff was generated or applied.</p>
+    </div>
+  );
+}
+
+function IllustrativeBrowser() {
+  return (
+    <div className="empty-surface" role="status">
+      <span className="empty-surface-icon"><Icon name="external" /></span>
+      <h2>Browser preview · sample only</h2>
+      <p>The browser surface is retained for the workspace. No page was opened and no navigation was requested.</p>
+    </div>
   );
 }
 

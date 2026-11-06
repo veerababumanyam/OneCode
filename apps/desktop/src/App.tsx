@@ -1,25 +1,26 @@
 import { useEffect, useState } from "react";
 import type { DesktopApi, RequestPreviewResult, WorkspaceLoadResult, WorkspaceView } from "./api/types";
 import { BottomPanel } from "./components/BottomPanel";
-import { ConversationCompanion, type CompanionTab } from "./components/ConversationCompanion";
 import { Icon } from "./components/Icon";
+import { MissionControl } from "./components/MissionControl";
 import { Navigator } from "./components/Navigator";
+import { WorkspaceInspector, type InspectorTab } from "./components/WorkspaceInspector";
 import { WorkspaceCanvas, type CenterTab } from "./components/WorkspaceCanvas";
 import { en } from "./i18n/en";
 
 type AppProps = { api: DesktopApi };
 
 export function App({ api }: AppProps) {
-  const [view, setView] = useState<WorkspaceView>("chat");
+  const [view, setView] = useState<WorkspaceView>("home");
   const [centerTab, setCenterTab] = useState<CenterTab>("editor");
-  const [companionTab, setCompanionTab] = useState<CompanionTab>("conversation");
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("files");
   const [workspace, setWorkspace] = useState<WorkspaceLoadResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [preview, setPreview] = useState<RequestPreviewResult | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [navigatorOpen, setNavigatorOpen] = useState(true);
-  const [companionOpen, setCompanionOpen] = useState(true);
+  const [inspectorOpen, setInspectorOpen] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -46,7 +47,7 @@ export function App({ api }: AppProps) {
     const updateLayout = () => {
       setIsMobile(query.matches);
       setNavigatorOpen(!query.matches);
-      setCompanionOpen(!query.matches);
+      setInspectorOpen(!query.matches);
     };
     updateLayout();
     query.addEventListener("change", updateLayout);
@@ -57,7 +58,7 @@ export function App({ api }: AppProps) {
     function closeDrawers(event: KeyboardEvent) {
       if (event.key === "Escape" && isMobile) {
         setNavigatorOpen(false);
-        setCompanionOpen(false);
+        setInspectorOpen(false);
       }
     }
     window.addEventListener("keydown", closeDrawers);
@@ -68,7 +69,8 @@ export function App({ api }: AppProps) {
     setView(nextView);
     if (nextView === "chat") setCenterTab("editor");
     if (nextView === "review") setCenterTab("diff");
-    if (nextView === "context") setCompanionTab("context");
+    if (nextView === "home") setInspectorOpen(false);
+    else setInspectorOpen(true);
     if (isMobile) setNavigatorOpen(false);
   }
 
@@ -82,7 +84,7 @@ export function App({ api }: AppProps) {
   const offline = !loading && (apiError !== null || workspace?.kind === "unavailable");
 
   return (
-    <div className={`app-shell${!navigatorOpen && !isMobile ? " navigator-collapsed" : ""}${!companionOpen && !isMobile ? " companion-collapsed" : ""}`}>
+    <div className={`app-shell${!navigatorOpen && !isMobile ? " navigator-collapsed" : ""}${(!inspectorOpen || view === "home") && !isMobile ? " inspector-collapsed" : ""}`}>
       <a className="skip-link" href="#workspace" onClick={() => document.getElementById("workspace")?.focus()}>
         {en.app.skipToWorkspace}
       </a>
@@ -116,38 +118,41 @@ export function App({ api }: AppProps) {
             {isFixture ? en.app.fixture : offline ? en.app.runtimeUnavailable : en.app.notConnected}
           </span>
           <button
-            aria-expanded={companionOpen}
-            aria-controls="conversation-companion"
+            aria-expanded={inspectorOpen && view !== "home"}
+            aria-controls="workspace-inspector"
             aria-label={en.app.toggleConversation}
-            className="icon-button companion-toggle"
-            onClick={() => setCompanionOpen((open) => !open)}
+            className="icon-button inspector-toggle"
+            hidden={view === "home"}
+            onClick={() => setInspectorOpen((open) => !open)}
             type="button"
           >
-            <Icon name="chat" />
+            <Icon name="folder" />
           </button>
         </header>
-        <WorkspaceCanvas
-          centerTab={centerTab}
-          error={apiError}
-          loading={loading}
-          onCenterTab={setCenterTab}
-          view={view}
-          workspace={workspace}
-        />
+        {view === "home" ? (
+          <MissionControl error={apiError} loading={loading} workspace={workspace} />
+        ) : (
+          <WorkspaceCanvas
+            centerTab={centerTab}
+            error={apiError}
+            loading={loading}
+            onCenterTab={setCenterTab}
+            onPreview={previewRequest}
+            preview={preview}
+            view={view}
+            workspace={workspace}
+          />
+        )}
         <BottomPanel />
         <RuntimeStatus isFixture={isFixture} offline={offline} />
       </main>
-      <ConversationCompanion
-        activeTab={companionTab}
-        apiError={apiError}
-        hidden={!companionOpen}
-        loading={loading}
+      <WorkspaceInspector
+        activeTab={inspectorTab}
+        hidden={!inspectorOpen || view === "home"}
         mobile={isMobile}
-        onClose={() => setCompanionOpen(false)}
-        onPreview={previewRequest}
-        onTabChange={setCompanionTab}
+        onClose={() => setInspectorOpen(false)}
+        onTabChange={setInspectorTab}
         preview={preview}
-        workspace={workspace}
       />
     </div>
   );

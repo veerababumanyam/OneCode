@@ -1,13 +1,38 @@
+import { useState, type FormEvent } from "react";
+import type { RequestPreviewResult } from "../api/types";
+import { en } from "../i18n/en";
 import { chatEn } from "./chat-en";
 import { Icon } from "./Icon";
 import "./ChatConversation.css";
 
-export function ChatConversation() {
+type ChatConversationProps = {
+  onPreview: (text: string) => Promise<RequestPreviewResult>;
+  preview: RequestPreviewResult | null;
+};
+
+export function ChatConversation({ onPreview, preview }: ChatConversationProps) {
+  const [draft, setDraft] = useState("");
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const text = draft.trim();
+    if (!text) return;
+    setPreviewError(null);
+    try {
+      const result = await onPreview(text);
+      if (result.kind === "unavailable") setPreviewError(result.message);
+      else setDraft("");
+    } catch (error) {
+      setPreviewError(error instanceof Error ? error.message : en.companion.previewFailure);
+    }
+  }
+
   return (
     <section aria-label={chatEn.sampleLabel} className="chat-conversation">
       <div className="chat-sample-banner">
-        <span className="chat-sample-dot" />
-        <span>{chatEn.sampleLabel}</span>
+        <span className="chat-sample-dot" aria-hidden="true" />
+        <span>{chatEn.sampleLabel} · nothing here is live</span>
       </div>
       <div className="chat-transcript">
         <p className="chat-session-label">{chatEn.dateLabel}<span />{chatEn.sampleLabel}</p>
@@ -48,28 +73,42 @@ export function ChatConversation() {
                 ))}
               </ul>
             </section>
-            <section aria-labelledby="chat-files-title" className="chat-detail-card chat-files-card">
-              <header className="chat-card-heading chat-files-heading">
-                <div>
-                  <h3 id="chat-files-title">{chatEn.filesTitle}</h3>
-                  <span>{chatEn.filesNotice}</span>
-                </div>
-                <span className="chat-not-run">{chatEn.filesStatus}</span>
+            <section aria-labelledby="chat-diff-title" className="chat-detail-card chat-diff-card">
+              <header className="chat-card-heading">
+                <h3 id="chat-diff-title">{chatEn.diffTitle}</h3>
+                <span className="chat-not-run">{chatEn.diffStatus}</span>
               </header>
-              <ul className="chat-file-list">
-                {chatEn.fileEntries.map((file) => (
-                  <li key={file.path}>
-                    <Icon name="file" />
-                    <span className="chat-file-description"><strong>{file.path}</strong><small>{file.detail}</small></span>
-                    <span className="chat-example-tag">EXAMPLE</span>
-                  </li>
-                ))}
-              </ul>
               <p className="chat-diff-notice"><Icon name="lock" />{chatEn.diffNotice}</p>
             </section>
           </div>
         </article>
+        {preview?.kind === "local-preview" && (
+          <div className="request-preview chat-request-preview" role="status">
+            <span className="overline">{en.companion.localPreviewLabel} · SAMPLE</span>
+            <p>{preview.text}</p>
+            <small>{preview.notice}</small>
+          </div>
+        )}
+        {(previewError || preview?.kind === "unavailable") && (
+          <p className="state-message" role="alert">{previewError ?? (preview?.kind === "unavailable" ? preview.message : "")}</p>
+        )}
       </div>
+      <form className="composer chat-composer" onSubmit={handleSubmit}>
+        <label className="visually-hidden" htmlFor="conversation-draft">{en.companion.messageLabel}</label>
+        <textarea
+          id="conversation-draft"
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder={en.companion.messagePlaceholder}
+          rows={3}
+          value={draft}
+        />
+        <div className="composer-footer">
+          <p>{en.companion.composerHint}</p>
+          <button aria-label={en.companion.previewRequest} className="primary-button" disabled={!draft.trim()} type="submit">
+            {en.companion.preview} <Icon name="arrow" />
+          </button>
+        </div>
+      </form>
     </section>
   );
 }

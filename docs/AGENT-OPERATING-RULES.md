@@ -94,6 +94,7 @@ These are the rules every OneCode agent runs under. They are a contract between 
 | R-38 | SHOULD navigate before reading: use the repository map, file skeleton, symbol location, and graph neighbors before reading whole files, and state the reason for each whole-file read. | Gateway records the disclosure rung and reason (TRD §6.7); critics report unexplained whole-file reads. | Context-efficiency benchmark (TRD §14.2); whole-file reads carry a reason. |
 | R-39 | Inferred and ambiguous graph edges, generated notes, and summaries are hints, not evidence. Confirm them against source before editing; cite source spans at a revision, never a bare inferred edge, in root causes, critiques, and delivery claims. | Quality engine rejects evidence citations that resolve only to inferred edges or derived notes (TRD §5.5.1). | Fixtures with misleading inferred edges produce a confirmation step or a rejected citation. |
 | R-40 | NEVER present a stale or partial graph or index answer as current or complete. Report the revision lag, coverage gaps, and omitted-item counts the query returned. | Gateway stamps every graph result with revision, staleness, coverage, and omissions. | Stale-graph and partial-coverage fixtures. |
+| R-41 | For a material blocker, use FR-125's separate escalation stages: up to three distinct, evidence-backed local Architect attempts, then up to three Advisor attempts, then pause for a user decision brief if unresolved. The core assigns durable blocker/root IDs and MUST preserve counters across turns, sessions, and model changes; only the core may open a linked episode after a user-confirmed material scope/criteria change or after verifying a distinct acceptance criterion/diagnostic fingerprint with separate affected scope. Agents cannot reset or relabel blockers to regain attempts. The Advisor MUST consult applicable project instructions, PRD/TRD/ADRs, local source/tests, and other relevant project documents on every attempt; it MUST identify and research comparable projects and authoritative technical sources when relevant and permitted. Citations and research-derived claims MUST resolve to gateway-produced evidence artifacts; external research requires its egress approval receipt and verified source metadata. Repeated turns or tool calls are not new strikes. Do not mix these counters with FR-29 code-repair limits. Hard-policy approvals and required user decisions remain immediate. | Orchestrator state machine and evidence validator (TRD §4.3); gateway and egress policy. | FR-125 escalation, episode-identity, citation-integrity, and external-egress tests (TRD §14.1). |
 
 ## 10. Traceability
 
@@ -101,11 +102,12 @@ Each rule maps to PRD requirements and TRD sections as follows; tests reference 
 
 | Rules | PRD | TRD |
 |---|---|---|
-| R-01 to R-04 | Principles 8 and 10; FR-43, FR-47, FR-79, FR-89, FR-102 | §6.5, §8.2, §8.3, §12 |
+| R-01 to R-04 | Principles 8 and 10; FR-43, FR-47, FR-79, FR-89, FR-102, FR-126, FR-130 | §5.8, §6.5, §8.2, §8.3, §10.3, §12 |
 | R-05 to R-10 | FR-11, FR-17, FR-18, FR-78, FR-100 | §3.4.4, §3.4.5, §6.4, §12 |
 | R-11 to R-15 | FR-18, FR-24, FR-47, FR-48, FR-57, FR-65, FR-96, FR-97 | §7.1, §7.3, §8.5, §8.7 |
 | R-16 to R-22 | FR-27 to FR-30, FR-82, FR-83, FR-113 | §6.6, §9.1 to §9.3, §9.5 |
 | R-23 to R-28 | FR-66, FR-70, FR-72 to FR-76, FR-79, FR-92 | §3.4.1 to §3.4.4, §6.5 |
-| R-29 to R-32 | FR-23, FR-24, FR-37, FR-38, FR-58, FR-65 | §7.1.2, §7.3, §10, §12 |
+| R-29 to R-32 | FR-23, FR-24, FR-37, FR-38, FR-58, FR-65, FR-126 to FR-130 | §5.8, §7.1.2, §7.3, §10.1 to §10.3, §11, §12, §14.1 |
 | R-33 to R-37 | FR-13, FR-14, FR-31, FR-88 | §4.1, §4.2, §13 |
 | R-38 to R-40 | FR-114 to FR-117, FR-119, FR-120, FR-124 | §5.5 to §5.7, §6.7, §14.2 |
+| R-41 | FR-18, FR-19, FR-29, FR-96, FR-125 | §4.3, §7.1, §8.5 to §8.7, §14.1 |

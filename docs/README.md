@@ -6,10 +6,11 @@ OneCode is a local-first AI coding application: a desktop workspace where a deve
 
 | Document | Owns | Read it when |
 |---|---|---|
-| [PRD.md](./PRD.md) | User-facing behavior, functional requirements `FR-01` to `FR-124`, UX requirements, non-functional targets, roadmap, open product decisions | You need to know what the product must do and for whom |
+| [PRD.md](./PRD.md) | User-facing behavior, functional requirements `FR-01` to `FR-130`, UX requirements, non-functional targets, roadmap, open product decisions | You need to know what the product must do and for whom |
 | [TRD.md](./TRD.md) | Architecture, component boundaries, workspace services, session model, typed artifacts, policy and permission engine, verification, data, testing, milestones, open technical decisions | You are designing or implementing a component |
+| [Autonomous One-Shot SDLC & ADLC Super-Harness - Technical Architecture Specification.md](./Autonomous%20One-Shot%20SDLC%20%26%20ADLC%20Super-Harness%20-%20Technical%20Architecture%20Specification.md) | Supplemental, non-normative workflow reference; compatible patterns only, subordinate to the PRD, TRD, accepted ADRs, and agent operating rules | You are evaluating optional orchestration, context-management, or verification patterns |
 | [TECH-STACK.md](./TECH-STACK.md) | Verified prototype dependencies and versions, plus proposed production technologies and unresolved stack decisions | You need the current stack inventory or are evaluating a dependency |
-| [AGENT-OPERATING-RULES.md](./AGENT-OPERATING-RULES.md) | The numbered rules `R-01` to `R-40` every agent runs under, each with its enforcement point and verification | You write policy, prompts, or tests for agent behavior |
+| [AGENT-OPERATING-RULES.md](./AGENT-OPERATING-RULES.md) | The numbered rules `R-01` to `R-41` every agent runs under, each with its enforcement point and verification | You write policy, prompts, or tests for agent behavior |
 | [ENGINEERING-STANDARDS.md](./ENGINEERING-STANDARDS.md) | How the OneCode codebase is laid out, written, tested, reviewed, documented, and released; the verification-economy and single-instance rules for anyone working in the repository | You contribute code or review a change |
 | [CODING-STANDARDS.md](./CODING-STANDARDS.md) | Design principles (YAGNI, KISS, DRY), naming conventions, folder structure, TypeScript/React and Rust practice, errors, comments, testing practice | You write or review code |
 | [SECURE-CODING.md](./SECURE-CODING.md) | Secure coding practices mapped to OWASP ASVS, CWE, and the OWASP LLM Top 10, plus the security review checklist | You touch input, files, processes, network, secrets, policy, or the Tauri bridge |

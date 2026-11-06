@@ -1,6 +1,6 @@
 # OneCode tech stack
 
-**Last checked:** 2026-10-31  
+**Last checked:** 2026-11-06  
 **Scope:** This repository contains product and architecture documentation plus a runnable design prototype. It does not yet contain the planned production application.
 
 This file is the central inventory of technology choices. It distinguishes dependencies that are actually used by the prototype from the proposed production architecture. For exact JavaScript dependency resolution, `docs/design/onecode-experience/package-lock.json` is authoritative.
@@ -172,10 +172,10 @@ There is no production `Cargo.toml` or Rust workspace in this repository yet. Th
 |---|---|---|
 | TLS | [rustls](https://crates.io/crates/rustls) **0.23.46**, [webpki-roots](https://crates.io/crates/webpki-roots) **1.0.11** | Prefer a maintained Rust TLS implementation and an explicitly chosen trust-root strategy for outbound HTTPS. Do not silently disable certificate validation. |
 | Platform certificate verification | [rustls-platform-verifier](https://crates.io/crates/rustls-platform-verifier) **0.7.1** | Evaluate if using OS trust stores is required; confirm behavior on every supported OS and in enterprise-managed environments. |
-| Authenticated encryption | [chacha20poly1305](https://crates.io/crates/chacha20poly1305) **0.11.0** | Cryptographic primitive candidate, not an application-level encryption design. ADR-0005 must select the at-rest encryption/key lifecycle and threat model before use. |
-| Password-based key derivation | [argon2](https://crates.io/crates/argon2) **0.6.0** | Only if a reviewed user-passphrase-derived key flow is actually required; do not invent password storage or key management around the crate. |
+| Authenticated encryption | [chacha20poly1305](https://crates.io/crates/chacha20poly1305) **0.11.0** | Selected by ADR-0005 for encrypted artifacts and proposed by ADR-0021 for authenticated encryption of portable knowledge backups. |
+| Password-based key derivation | [argon2](https://crates.io/crates/argon2) **0.6.0** | Selected by ADR-0005 for the headless passphrase fallback and proposed by ADR-0021 for passphrase-protected portable knowledge backups; passphrases are never stored. |
 | Hashes | [sha2](https://crates.io/crates/sha2) **0.11.1** | Content/integrity hashes and artifact references; not a password hash or encryption scheme. |
-| Encrypted portable files | [age](https://crates.io/crates/age) **0.12.1** | Candidate for user-requested encrypted exports/imports; do not conflate file encryption with the local database encryption decision. |
+| Encrypted portable files | [age](https://crates.io/crates/age) **0.12.1** | Alternative candidate considered in proposed ADR-0021; not selected because the existing authenticated-encryption and key-derivation dependencies are reused. |
 | Platform APIs | [windows](https://crates.io/crates/windows) **0.62.2**, [security-framework](https://crates.io/crates/security-framework) **3.7.0**, [nix](https://crates.io/crates/nix) **0.31.3** | Platform-specific adapters only for APIs the product needs. Keep unsafe and privileged code isolated in platform crates and verify equivalent security guarantees. |
 | Linux sandbox primitives | [landlock](https://crates.io/crates/landlock) **0.4.7** | Linux-only candidate, not a cross-platform sandbox. ADR-0004 must define native isolation per OS and fail closed when mandatory controls are unavailable. |
 
@@ -183,13 +183,17 @@ Do not roll custom cryptography, TLS verification, authentication, or sandboxing
 
 #### Persistence, repository intelligence, and integrations
 
-| Capability | Crate and latest stable version | Architect recommendation |
+The `lbug` crate's newest release on 2026-11-06 was 0.22.1, published less than 14 days earlier; 0.21.1 is listed as the newest release that meets the dependency policy's cool-down. The catalog's other Rust versions retain their 2026-10-31 research date.
+
+| Capability | Library/project and latest stable version | Architect recommendation |
 |---|---|---|
 | SQLite through async SQL | [sqlx](https://crates.io/crates/sqlx) **0.9.0** | Alternative to `rusqlite`, not an additional default. It reports Rust 1.94.0 as its MSRV; validate against the chosen toolchain and SQLite/encryption needs. |
-| SQLite through synchronous API | [rusqlite](https://crates.io/crates/rusqlite) **0.41.1** | Alternative to `sqlx`; isolate blocking operations appropriately. ADR-0005 must choose one access strategy and review SQLite build/encryption distribution. |
+| SQLite through synchronous API | [rusqlite](https://crates.io/crates/rusqlite) **0.41.1** | Selected by ADR-0005 for relational state and index data; LadybugDB is proposed for graph nodes, edges, communities, and repository-map layers. Isolate blocking operations appropriately. |
+| Embedded property graph | [LadybugDB](https://github.com/LadybugDB/ladybug), Rust binding [`lbug`](https://crates.io/crates/lbug) **0.21.1** (MIT) | Proposed by ADR-0017 as the graph store. LadybugDB is the actively maintained successor to archived KuzuDB. Version 0.21.1 meets the 14-day cool-down as of 2026-11-06; verify native builds and behavior on every supported OS before adoption. |
+| Optional SQLite vector extension | [`sqlite-vec`](https://github.com/asg017/sqlite-vec) **0.1.9** | Candidate for ADR-0006 only if SQLite is selected for vector search; optional and unrelated to graph persistence. |
 | SQL migrations | [refinery](https://crates.io/crates/refinery) **0.10.0** | Candidate only if migrations are not handled by the selected database layer. Do not run two migration systems against the same schema. |
 | In-memory graph algorithms | [petgraph](https://crates.io/crates/petgraph) **0.8.3** | Candidate for graph traversal/layout inputs; it is not the graph persistence engine. |
-| Vector search | [usearch](https://crates.io/crates/usearch) **2.26.6**, [lancedb](https://crates.io/crates/lancedb) **0.41.0** | Alternatives for ADR-0006, not a recommendation to ship both. Compare local footprint, native payloads, Windows/macOS/Linux support, filtering, migration, and offline behavior. LanceDB reports Rust 1.94.0 as its MSRV. |
+| Vector search | [usearch](https://crates.io/crates/usearch) **2.26.6**, [lancedb](https://crates.io/crates/lancedb) **0.41.0** | Alternatives for ADR-0006, not a recommendation to ship both. Compare these with the optional `sqlite-vec` candidate for local footprint, native payloads, Windows/macOS/Linux support, filtering, migration, and offline behavior. LanceDB reports Rust 1.94.0 as its MSRV. |
 | Embedded Git | [git2](https://crates.io/crates/git2) **0.21.0** | Alternative only if ADR-0014 selects a library over the Git CLI; evaluate libgit2 packaging and credential-helper parity. |
 | LSP client | [async-lsp](https://crates.io/crates/async-lsp) **0.2.4**, [lsp-types](https://crates.io/crates/lsp-types) **0.97.0** | Candidate LSP client and protocol types; select with ADR-0015 and keep language-server processes behind the manager. |
 | Browser DevTools Protocol | [chromiumoxide](https://crates.io/crates/chromiumoxide) **0.9.1** | Candidate only if ADR-0013 selects Chromium/CDP; validate browser version lifecycle, isolation, downloads, and cross-platform packaging. |

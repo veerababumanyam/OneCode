@@ -13,6 +13,8 @@ This document translates the OneCode product vision into a proposed technical ar
 
 Where the source leaves choices open, this document labels the choice as **proposed** or **open**. Resolve open choices through recorded architecture decision records (ADRs) before they become non-reversible implementation dependencies.
 
+The [Autonomous One-Shot SDLC & ADLC Super-Harness specification](./Autonomous%20One-Shot%20SDLC%20%26%20ADLC%20Super-Harness%20-%20Technical%20Architecture%20Specification.md) is supplemental, non-normative reference material. Its compatible workflow ideas may inform implementation, but the PRD, this TRD, accepted ADRs, and agent operating rules govern OneCode. “One-shot” means a user can request an end-to-end task; routine, reversible choices should be handled by the agent/advisor within the approved scope, while required approvals and materially consequential user decisions remain gated. The user can interrupt or review changes before integration.
+
 ## 2. Technical principles
 
 - Local-first execution and storage; external services are optional and governed.
@@ -61,7 +63,7 @@ Where the source leaves choices open, this document labels the choice as **propo
 | Model router | Selects provider/model and applies privacy, capability, budget, and availability constraints. | Receives only the minimum context required for a model call. |
 | Tool/MCP gateway | Discovers, describes, authorizes, invokes, and audits tools and skills. | All side-effecting tool use passes through policy enforcement. |
 | Quality engine | Runs deterministic checks and independent critique; manages repair evidence. | Critic roles are read-only; quality failures cannot be marked successful by a builder. |
-| Memory service | Stores source-linked project/task/user/team knowledge under explicit retention controls. | Separate namespaces and access policies; redact before persistence. |
+| Second-brain service | Captures, reviews, links, maintains, recalls, and backs up source-linked project knowledge (§5.8). | SQLite holds authoritative records and lifecycle state; only accepted knowledge is eligible for recall; redact before persistence; local-first with no automatic cloud sync. The code graph and vector index are derived retrieval aids. |
 | Delivery adapter | Prepares Git commits, PRs, CI checks, and release artifacts. | Explicit approval for external publication or destructive Git actions. |
 | Workspace services | Host the surfaces the user and agents share: editor and language service, terminal, built-in browser and annotations, source control, process and port registry, and diagnostics bus (§3.4). | Agent observation and action pass through the gateway and policy; user actions are logged for attribution only. |
 | Session service | Sessions, turns, steering queue, interruption, compaction, and transcripts (§4.2). | Owns session state; tasks belong to sessions; agents cannot change conversation or permission mode. |
@@ -201,7 +203,18 @@ Turn    { id, session, user_message, attachments[], steps[], artifacts[], checkp
 - **Safe points** are the boundaries between tool calls and between agent steps. Steering messages are delivered at the next safe point. An interrupt stops the current tool (cancelling cancellable processes), preserves checkpoints and logs, and waits for the user; cancel ends the turn and records partial artifacts.
 - **Compaction** replaces older conversation content with a `CompactionSummary` artifact that keeps the identifiers of evidence items, pending approvals, unapplied hunks, open findings, and checkpoints. Compaction is user-visible and editable. Pending approvals and unapplied changes live in session state outside the conversation text, so compaction can never remove them.
 - **Subagents** are child sessions with a narrower instruction set, context, tool allowlist, and budget; they return typed artifacts and cannot widen permissions. Background sessions run detached and raise attention state when they finish or need a decision.
+- **Advisor role.** An advisor agent may resolve routine, reversible implementation choices within the user's request and current permission scope by following repository guidance and recording its rationale or assumption. The orchestrator carries out ordinary actions when the active permission mode allows them; it does not ask for a separate user approval on every such action. The advisor cannot grant permissions, change policy or mode, approve hard-policy actions, or mark checks passed. Ask the user only when the answer materially changes behavior, scope, risk, or cost, or when the active mode or policy requires approval (PRD step 5 and FR-96; R-03, R-04, R-11, R-34).
 - **Persistence.** Sessions, turns, and steps are persisted with the task event history; restart recovery (§4.1) applies per session.
+
+### 4.3 Evidence-backed decision escalation
+
+For a material architectural or implementation blocker that the local Architect role cannot resolve, the orchestrator uses the separate FR-125 decision budget:
+
+1. **Architect stage:** Give the local Architect role up to three distinct attempts to resolve the same blocker. Each attempt records its proposed resolution, acceptance/check criteria, relevant evidence, and outcome. A failed check or an unresolved blocker counts as one strike; repeated turns, tool calls, or restatements without a materially different evidence-backed approach do not.
+2. **Advisor stage:** After the Architect stage has three unresolved strikes, send the Advisor role the original request, blocker, criteria, evidence, and concise record of all Architect attempts. The Advisor gets up to three distinct evidence-backed attempts under a separate counter. On every attempt it must consult relevant repository instructions and project documents (including applicable PRD, TRD, ADRs, source, tests, and local references), identify comparable projects and authoritative technical sources, and research them where relevant and permitted. Every citation in an attempt or decision brief must resolve to a gateway-produced evidence artifact (TRD §6.1), not a model-supplied URL alone. External research is performed only when authorized by the existing egress policy; its evidence artifact records canonical URL, retrieval time, source revision/date when available, content hash and cited span, plus the approval receipt. A failed or denied fetch is not evidence; record that limitation and do not imply research was performed.
+3. **Human stage:** If the blocker remains unresolved after three Advisor strikes, pause the task and present a decision brief containing the blocker, acceptance criteria, evidence, approaches tried and outcomes, relevant project-document citations, any permitted research, remaining options, and a recommended question. Resume only after the user responds or changes scope. Do not repeatedly prompt during the two bounded agent stages.
+
+The orchestrator assigns each blocker a durable `BlockerEpisode.id` and `root_blocker_id`, linked to its task, core-assigned acceptance criteria, affected scope, and evidence. Each episode has its own three-plus-three counters; linked episodes preserve the full prior history. Attempts refer to the episode identity; model output cannot create IDs, reset counters, or reopen a resolved episode. The same root blocker retains its identity when rephrased, moved to another file, or continued in another turn, session, or model. The core may open a linked episode only after a user-confirmed material scope/criteria change, or a new root episode only after evidence of an independent failure tied to a distinct acceptance criterion or diagnostic/test fingerprint and affected scope. The core records the comparison and reason; agents cannot request a reset by relabeling. When evidence does not establish a distinct root, retain the existing root ID and counters. These decision attempts neither consume nor extend FR-29's configurable code-repair budget; exhausting that budget halts code repair and cannot be bypassed by relabeling retries as Architect or Advisor attempts. Hard-policy approvals, required user decisions, and interrupts remain immediate and are never delayed by this escalation sequence. Routine reversible choices within scope continue without per-action prompts.
 
 ## 5. Repository onboarding and indexing
 
@@ -289,7 +302,7 @@ Edge { from, to, kind (contains | imports | calls | references | implements | ex
 - **Revision-keyed.** Every query result carries the revision it was computed at. A query against a worktree whose index is behind reports `stale` with the lag instead of answering as if current (§5.2).
 - **Language coverage is explicit.** Files whose language has no parser contribute file nodes only; the graph reports per-language coverage so missing call edges are never read as "no callers".
 - **Local concept extraction only.** Concept and relationship extraction from documentation, design notes, and images uses the local Summarizer role (§7.2) and produces `inferred` edges labeled as derived content. Sending repository documents or images to an external model for extraction is external egress: it requires the FR-23 configuration, FR-18 approval, redaction, and an egress receipt (§7.3). There is no silent cloud extraction step.
-- **Storage.** Graph data lives in the repository-index domain outside the repository (§10.1), bound to parser, graph-schema, and (for similarity edges) embedding-model revisions; changing any of them marks the affected edges stale.
+- **Storage.** LadybugDB is the proposed store for graph nodes, edges, communities, and repository-map layers (ADR-0017). It lives in the repository-index domain outside the repository (§10.1), bound to parser, graph-schema, and (for similarity edges) embedding-model revisions; changing any of them marks the affected graph data stale. SQLite remains the relational and lexical index store under ADR-0005; ADR-0006 decides whether vector search uses SQLite with `sqlite-vec` or another embedded store.
 
 #### 5.5.3 Communities and the repository map
 
@@ -320,9 +333,9 @@ The knowledge map is the human-facing, linked-notes view of the same graph, in t
 Use one maintained graph visualization library selected through ADR-0018 (evaluate Sigma.js with Graphology and Cytoscape.js for graph exploration); use React Flow only for editable workflow/DAG canvases, not as the default knowledge-map engine. Use Apache ECharts for quantitative charts if needed, not as a substitute for graph semantics. Keep keyboard navigation, accessible details, and a non-canvas representation available; the visualization library is a view over the authoritative graph, not its storage or source of truth.
 
 - **Notes.** A `KnowledgeNote { id, node_ref, title, body, links: [{ target, kind, provenance }], backlinks, source_spans, revision, derived }` is generated from graph data plus, optionally, a local Summarizer paragraph. Generated prose is labeled derived and invalidated when its source revision changes (§7.2). Notes the user writes or edits are user content and are never silently regenerated over.
-- **Memory as linked notes.** Project memory entries (FR-37) are stored as knowledge notes with links to the code, ADRs, and requirements they describe. Retrieval can then load a note and its one-hop neighbors instead of the whole memory store, and contradiction review (R-31) can find every note linked to a changed symbol.
+- **Memory as linked notes.** Accepted project-memory entries (FR-37) are represented as knowledge notes linked to the code, ADRs, and requirements they describe. The second-brain record and its review/history lifecycle (§5.8) remain authoritative; the graph stores derived links and retrieval metadata. Recall is scope- and freshness-aware, and contradiction review (R-31) suggests every affected note for user review without silently changing it.
 - **Views.** The desktop shows a force-directed graph view filterable by node kind, community, edge provenance, and changed-in-this-task, plus a backlinks pane for the active file or note. Selecting a node opens the source, note, or document; the graph view is a navigation aid, and source remains the authority.
-- **Export.** On explicit user action, the knowledge map can be exported as a folder of Markdown files with wikilinks and front matter that opens in Obsidian-compatible tools. Export applies redaction (R-30), excludes content the index excluded, writes outside the repository unless the user chooses a path, and is recorded. Importing an external vault is out of scope for the initial release; if added later, imported notes are untrusted data (R-01).
+- **Export and import.** On explicit user action, the knowledge map can be exported as a folder of Markdown files with wikilinks and front matter that opens in Obsidian-compatible tools. Export applies redaction (R-30), excludes content the index excluded, writes outside the repository unless the user chooses a path, and is recorded. Because Markdown files are plaintext, export shows the destination and a disclosure warning and requires confirmation. Full Markdown/wikilink import is a P1 follow-up under FR-130, not initial-release scope; imported notes are untrusted and enter the review queue, with no implicit fetching or execution (§10.3, R-01).
 - **Performance.** The view renders from a precomputed layout per scope and loads node bodies on demand, so opening the map never blocks the editor (PRD §11.3 rule 2).
 
 ### 5.7 Default embedding model: where it is used
@@ -343,6 +356,17 @@ OneCode ships a default embedding model inside the application package (FR-123; 
 **Measurement and defaults.** Each use is benchmarked with the embedding on and off on the same versioned task set (§14.2). A use whose benchmark shows no gain in relevance, tokens, or turns, or that costs more than its latency budget, ships switched off by default for that repository size class. The index records which uses were active for each task so results stay reproducible.
 
 **Resources.** Embedding runs on-device in a background worker with its own CPU and memory budget, yields to the editor and terminal, batches by content hash, and pauses on battery-saver or low-memory signals. Incremental re-embedding is part of the per-file re-index budget.
+
+### 5.8 Second-brain knowledge lifecycle
+
+The second brain is the user-facing lifecycle over project knowledge; the code knowledge graph and GraphRAG are indexing and retrieval components, not the knowledge authority. Source code, project documents, and user-reviewed decisions remain authoritative.
+
+- **Capture inbox.** Create a capture only from user-selected content or an explicitly enabled capture action. Supported sources include project docs/code/ADRs/requirements, task decisions and verified outcomes, user-authored notes, and permitted workspace observations. Apply repository exclusions, trust labels, redaction, and retention controls before persistence. Store scope, source link, source revision or capture time, selected span/content hash, and origin. External content is captured only when already available through an authorized observation or after an approved fetch; no background crawling.
+- **Review and acceptance.** Captures and machine-generated suggestions enter a review queue. The user can inspect source and scope, edit, link, accept, reject, archive, or delete. A candidate is not accepted memory until user acceptance; model confidence, embeddings, or repeated retrieval never auto-promote it. Bulk acceptance, if offered, must preview the exact items and scope.
+- **Typed knowledge and relations.** Keep user-authored accepted notes distinct from imported and derived content. Represent relations such as `supports`, `contradicts`, `supersedes`, `derived_from`, and `applies_to` with provenance, source/evidence references, author, timestamps, and validity interval where known. Preserve revision history for accepted edits. A derived note is reproducible and refreshable; refresh creates a new derived revision and never overwrites user-authored text.
+- **Maintenance.** Detect possible duplicates and contradictions as review suggestions. A source change, removed source, changed repository revision, or expired validity interval marks dependent knowledge stale or needing review; it does not silently rewrite or delete accepted notes. Provide explicit resolve, supersede, archive, restore, and delete operations while retaining user-configured history.
+- **Recall and resurfacing.** Rank by scope/applicability, graph relations, lexical match, semantic similarity, recency, and the active task. Return a reason, provenance, source/revision, freshness, and an exact evidence reference with each result. Show recalled items in relevant task context or in user-requested review; unsolicited notifications are opt-in. User feedback (useful, irrelevant, stale, incorrect) may tune ranking but cannot edit accepted content. A recalled note is context, not proof or authorization; claims must cite current source/evidence where available.
+- **Portability and recovery.** Support explicit, versioned, passphrase-encrypted backup of accepted user-authored memory, links, provenance, and revision history. Reuse the Argon2id and XChaCha20-Poly1305 dependencies selected by ADR-0005 (proposed archive policy: ADR-0021); never persist or log the passphrase, and disclose that a lost passphrase prevents recovery. Authenticated encryption protects confidentiality and integrity but does not prove original authorship. Restore and import are untrusted and land in a review queue; archived acceptance is historical provenance only until the user re-accepts a record. Validate archive authentication, KDF parameter bounds, schema, paths, sizes, and content; preview scope/conflicts before restore. Never execute embedded code or fetch links implicitly. Restore is atomic and rollback-capable; indexes and model files are excluded unless separately selected. Plaintext Markdown export requires warning and confirmation. Cloud sync is out of scope.
 
 ## 6. Agent runtime and coding techniques
 
@@ -374,6 +398,14 @@ Agents communicate through validated artifacts rather than relying solely on fre
 - `RepoMap`, `CodeSkeleton`, and `ImpactSet`: budgeted graph query results with revision, coverage, edge provenance, and omitted-item counts (§5.5).
 - `KnowledgeNote`: a linked note over a graph node with links, backlinks, source spans, and a derived flag (§5.6).
 - `OutputRef`: a handle to tool or command output stored outside the model context, with size, hash, and the excerpt that was shown (§6.7).
+- `BlockerEpisode`: a core-generated durable `id` and `root_blocker_id` linked to task, acceptance-criterion IDs, affected scope, evidence references, counters, and any verified parent episode.
+- `DecisionAttempt`: blocker episode ID, stage, ordinal, stated criteria, proposed resolution, gateway evidence references, and outcome; model output cannot create or reset episode IDs/counters.
+- `ResearchEvidence`: a gateway-issued source reference with source kind, canonical path/URL, retrieval time, repository/source revision when available, content hash, cited span, trust label, and external-egress approval receipt where applicable. A model-supplied URL or failed/denied fetch is not evidence.
+- `KnowledgeCapture`: user-selected source, selected span or content reference, scope, trust/provenance, source revision or capture time, redaction state, and review status.
+- `KnowledgeNoteRevision`: immutable revision ID, note type, body/reference, author/origin, created time, source/evidence references, scope, validity interval, and derived/imported flags.
+- `KnowledgeRelation`: typed relation (`supports | contradicts | supersedes | derived_from | applies_to` and graph relation kinds), endpoints, provenance, evidence reference, confidence where inferred, validity, and acceptance status.
+- `MemoryFeedback`: note/result reference, user-selected relevance/freshness label, and time; it changes ranking signals only, not note content or acceptance state.
+- `KnowledgeSnapshot`: archive schema/version, selected scopes, included user-authored records and history, content manifest/hashes, and restore validation report.
 
 Schemas must be versioned, validated at boundaries, and reject unknown or malformed required fields with actionable errors.
 
@@ -692,12 +724,12 @@ The check scheduler uses `graph_impact` (§5.5.4) to order and narrow checks dur
 |---|---|---|
 | Repository index | File hashes, symbols, relationships, embeddings, source revision. | Rebuildable; local; scoped to repository. |
 | Code knowledge graph | Nodes, provenance-labeled edges, communities, repository-map layers, and layout caches keyed to revision and graph-schema version (§5.5). | Rebuildable from the index; local; outside the repository; invalidated per file by content hash. |
-| Knowledge map notes | Generated notes (derived, rebuildable) and user-written notes and memory entries (user content) with links and backlinks (§5.6). | Generated notes follow the graph; user notes follow project-memory retention and export/delete controls. |
+| Second-brain knowledge | Capture inbox, accepted user-authored memory, immutable note revisions, provenance-bearing relations, feedback, and portable snapshots (§5.8). | Captures await review; source changes mark linked notes stale; user content is never silently overwritten; user controls retention, export, restore, and deletion. |
 | Output references | Large tool, command, and test outputs stored outside model context (§6.7). | Task evidence retention; redacted; size-capped; deleted with the task. |
 | Local model catalog and files | Model-role metadata, source/revision, license, artifact hashes, compatibility, downloaded weights, and verified offline imports. | Stored outside target repositories; acquisition and removal are user-controlled and distinct from repository index retention. |
 | Task state | Brief, plan, transitions, approvals, patches, checks, critiques. | Durable until user retention policy deletes it. |
 | Audit records | Tool calls, policy decisions, external egress, approval outcomes. | Append-only; retention configurable; sensitive payloads minimized. |
-| Project memory | Architecture, conventions, domain terms, constraints. | Source-linked, editable, user-controlled. |
+| Project memory | Accepted architecture, conventions, domain terms, constraints, and links represented in the second-brain lifecycle (§5.8). | User-controlled; source-linked, revisioned, retained/exported/deleted under the configured policy. |
 | User/team preferences | Model and approval preferences, standards. | Explicitly controlled and access-scoped. |
 | Credentials | Provider and tool credentials. | OS credential store or dedicated vault; never model-readable. |
 | Sessions and transcripts | Session metadata, turns, steps, compaction summaries, attachments by reference. | Durable; export and delete per session; redacted on export. |
@@ -715,7 +747,16 @@ The check scheduler uses `graph_impact` (§5.5.4) to order and narrow checks dur
 - Keep index records associated with source revision and parser/index schema version.
 - Do not write indexes or OneCode runtime state into the target repository by default.
 
-**Open ADRs:** select the metadata/database engine, local vector index (`SQLite` plus an embedded vector extension/library versus another embedded store), and index migration strategy. Keep the index interface replaceable until the choice is validated.
+**Storage decisions:** ADR-0005 selects SQLite for transactional state and relational index data. Store authoritative second-brain records, revisions, relations, provenance, and review state there; LadybugDB under proposed ADR-0017 holds the derived code graph and references to accepted knowledge records, not canonical note content. ADR-0006 still selects the local vector index; `sqlite-vec` is an optional candidate, not a required dependency. Repository-derived index and graph data remain rebuildable, and storage interfaces stay replaceable until cross-platform and workload evidence validates the proposal.
+
+### 10.3 Knowledge backup, import, and restore
+
+- Snapshots include the user-selected scopes of accepted user-authored notes, revision history, provenance, links, and approved feedback. Captures awaiting review are excluded. Derived graph/index data and model files are excluded unless separately selected.
+- The native archive carries a versioned manifest, inventory, schema version, and bounded Argon2id parameters. Encrypt and authenticate the manifest and payload with XChaCha20-Poly1305 using a fresh random salt and nonce. Export requires a user passphrase, writes only encrypted native archives, applies redaction and index exclusions, and reports what was omitted.
+- Import supports the encrypted OneCode archive and supported Markdown/wikilink format. Treat every archive path, frontmatter field, link, and body as untrusted data; enforce path containment and size/depth/KDF limits, reject malformed or duplicate identifiers safely, and never execute scripts, macros, or embedded instructions. Do not fetch linked URLs implicitly.
+- Before applying an import or restore, show target scope, provenance (including that archive integrity does not establish authorship), conflicts, unsupported fields, and validation outcomes. Native-archive restore and Markdown import both enter the review queue; preserve prior acceptance only as historical metadata, and require explicit re-acceptance before restored records can be recalled.
+- Restore validates all contents before mutation, applies changes transactionally or via staged replacement, and preserves a rollback point. On any failure, restore the prior state and report the exact failure; do not produce a partial success state.
+- Backup/restore works offline and never uploads data. Automatic cloud sync and cross-device replication require a separate product and security decision.
 
 ## 11. API and event requirements
 
@@ -726,6 +767,7 @@ Concrete public endpoints are not fixed yet. The local application API should pr
 - Submit approval/denial decisions with the relevant action scope.
 - Inspect repository scan/index status and initiate a refresh.
 - Query the code knowledge graph (map, skeleton, locate, find-all, neighbors, impact, path, status) under the same policy and budgets as agents (§5.5.4); open the knowledge map, read and edit notes, and export it on explicit user action (§5.6).
+- Create, list, inspect, edit, accept, reject, link, merge, supersede, mark stale, archive, restore, and delete knowledge captures/notes; inspect provenance and revisions; record memory relevance feedback; retrieve memory with explanation and freshness; export a selected-scope snapshot; validate, preview, and restore/import an archive or supported Markdown notes (§5.8, §10.3).
 - List compatible local models, inspect their provenance and resource requirements, download after approval, select a model by role, inspect model/index status, and remove downloaded models or rebuild/delete an embedding index.
 - Import an offline model bundle through an explicit local selection, inspect manifest/signature and artifact-verification results, and activate it only after verification succeeds; the import flow makes no network requests.
 - Inspect model, tool, policy, and memory settings without exposing secrets.
@@ -745,6 +787,9 @@ Task events should be ordered, timestamped, typed, and replayable. UI clients mu
 - Redact secrets before prompts, external egress, logs, embeddings, and memory persistence.
 - Keep repository chunks, prompts, and embeddings on-device for local model workflows; a model download must not upload repository data. Verify pinned artifact hashes, load only explicitly supported formats, do not execute remote model code, and apply runtime/resource limits to model loading and inference.
 - For offline imports, verify a signed manifest against the app's trusted key set and every artifact hash before activation; reject bundle traversal, unsupported formats, invalid signatures, and partial/corrupt imports without a success-shaped fallback.
+- Parse imported knowledge archives and Markdown as untrusted data: enforce canonical path containment, format allowlists, size/depth limits, schema validation, safe link handling, and atomic restore; never execute embedded content or fetch remote links implicitly.
+- Require authenticated encryption for portable OneCode backups, bound untrusted key-derivation parameters before running a KDF, never store/log passphrases, and keep restored/imported records out of recall until explicitly re-accepted.
+- Keep user-authored, imported, inferred, and derived memory distinguishable. Memory retrieval cannot authorize actions, override project policy, or substitute for current source evidence; external-source capture follows existing egress approval, redaction, and receipt requirements.
 - Treat model weights and all model outputs as untrusted; model output can rank or summarize evidence but cannot change permissions, policy, or task scope.
 - Enforce external egress policy centrally and record receipts.
 - Restrict MCP servers to an explicit approved registry and audit discovery/invocation.
@@ -774,6 +819,7 @@ Each task should expose:
 - Permission decisions with the evaluated rule chain, hook events and results, trust changes, and process registry events (launch, reuse, conflict, stop).
 - Context economy (§6.7): tokens by context layer, disclosure rung per code item, whole-file reads with their reasons, output references created and expanded, cleared observations, and constrained-decoding use and artifact-validation retries.
 - Graph operations: query kind, latency, result size, omitted-item count, revision lag, and whether inferred edges were returned; graph build and incremental-update durations.
+- Second-brain operations: capture/review status counts, stale/contradictory/duplicate suggestion counts, retrieval rationale and freshness class, user feedback labels, and snapshot/restore validation outcomes. Record metadata and references only; do not log note bodies, source text, or private content.
 
 Logs must be structured, locally retained by default, redacted, and configurable. Avoid recording full source or secrets when a hash, source reference, or bounded diagnostic is sufficient.
 
@@ -800,12 +846,15 @@ Use `tracing` as the Rust instrumentation boundary and evaluate the OpenTelemetr
 - **Compatibility:** supported operating systems, model runtimes, repository sizes, and language/parser versions.
 - **Workspace services:** document-model concurrency between user and agent edits (rebase, conflict, no silent overwrite); terminal PTY behavior per OS, shell-integration marks, attribution, capture bounds and redaction, and sharing rules; browser isolation (no system-profile access), host classification, capability-class enforcement, blocked link patterns, download and permission prompts, console/network redaction, annotation capture fidelity, element-to-source mapping accuracy on fixture applications, and before/after re-capture; source-control operations and destructive-action approvals; process-registry reuse, port-conflict handling, stop ownership, and orphan cleanup; diagnostics-bus deduplication and "sources active" reporting.
 - **Sessions and steering:** safe-point delivery, interrupt and cancel semantics, compaction invariants (pending approvals and unapplied hunks survive), turn-level revert, parallel sessions in separate worktrees, and subagent scope narrowing.
+- **Decision escalation (FR-125):** three distinct failed Architect attempts precede three distinct Advisor attempts; counters are separate and do not alter FR-29 repair limits; repeated turns do not count as new strikes; every Advisor attempt cites applicable project documentation and records comparable-project/authoritative-source research when relevant and authorized; denied or unavailable egress is recorded without network access; the sixth unresolved attempt pauses with a complete human decision brief; hard-policy prompts remain immediate.
+- **Decision-escalation identity and citation integrity:** the same blocker keeps its core-generated root identity and counters across relabeling, turns, sessions, and model changes; only a user-confirmed material scope/criteria change or a distinct acceptance criterion/diagnostic fingerprint with separate affected scope can start a linked episode. Test forged resets, cross-session recovery, independent-root evidence, and unchanged FR-29 counters. Reject citations or research-derived claims without matching gateway evidence artifacts; test fabricated URLs, failed/unreachable fetches, mismatched source revisions/spans, verified local-document citations, valid external receipts, and denied-egress paths.
 - **Permission modes, rules, trust, and hooks:** rule-chain evaluation order, deny precedence, command-segment parsing and unparseable fallback, "remember" writes, hard-policy immutability across modes, sandbox-unavailable fallback, untrusted-workspace blocking, trust revocation, hook outcomes and timeouts, and the inability of hooks or instruction files to grant permissions.
 - **Fix workflows:** fix-from-evidence creation from each surface, reproduction-first behavior, symptom-patch detection by critics, and auto-fix bounds (no push, post, or merge).
 - **Verification economy:** prerequisite checks before compilation, a single compile per material change, artifact reuse, zero-test detection, and stop rules.
 - **Code knowledge graph:** extracted-edge accuracy against hand-labeled fixture repositories per language; provenance labeling (no model- or heuristic-derived edge labeled extracted); incremental invalidation after edits, renames, deletions, and branch switches; stale reporting; per-language coverage reporting; exclusion parity with the index; deterministic communities on unchanged input; budget truncation that reports omissions; and no egress from concept extraction unless approved and receipted.
 - **Context economy:** disclosure-ladder behavior and whole-file-read reasons, output-reference creation and range expansion, superseded-observation clearing that never drops approvals, hunks, findings, or evidence identifiers, patch-shaped edit output, and constrained-decoding fallback when a runtime lacks support.
 - **Knowledge map:** derived-note invalidation on revision change, preservation of user-edited notes, backlink correctness, redacted export with index exclusions applied, and editor responsiveness while the map is open.
+- **Second brain:** capture source attribution, scope, trust, and redaction; review-before-acceptance; derived-versus-user-authored separation; immutable revision history; source-change and expiry staleness; duplicate/contradiction suggestions without automatic merge; typed relations and backlinks; retrieval explanation, scope/freshness ranking and feedback without content mutation; stale-memory warnings; encrypted archive/Markdown round trips; wrong-passphrase and authenticated-integrity failures; hostile KDF parameters; restored records pending re-acceptance; plaintext-export disclosure; malformed metadata and path traversal; oversized/deep archives; malicious instruction-like content; no implicit network fetch or execution; preview/conflict handling; atomic restore, rollback, selective export, and deletion/retention.
 - **Graph-assisted check selection:** inferred edges never remove a test, stale-graph fallback, and an unchanged required pre-delivery set.
 - **Default embedding model:** bundled-artifact verification at build and load, tamper and missing-file failure that disables semantic retrieval with an explicit error, first-run indexing without network access, disable/replace/re-enable flows, index invalidation when an update changes the model, background-worker resource limits that keep editor latency within budget, embedding suggestions stored as inferred until confirmed, and each §5.7 use measured on and off.
 - **Desktop UX:** keyboard operability, screen-reader announcements, theme and high-contrast rendering, layout persistence, and latency budgets for editor, terminal, and annotation flows on each OS.
@@ -813,9 +862,11 @@ Use `tracing` as the Rust instrumentation boundary and evaluate the OpenTelemetr
 ### 14.2 Test data and evaluation
 
 - Maintain synthetic and licensed benchmark repositories with known tasks and expected outcomes.
+- Maintain a separate, consented memory benchmark with known source provenance, validity intervals, duplicates, contradictions, task queries, and expected recall/exclusion behavior.
 - Include clean, incomplete, monorepo, large, and adversarial repository fixtures.
 - Version benchmark tasks, acceptance rubrics, model/provider versions, and hardware profiles.
 - Measure acceptance, regression, context efficiency, latency, escalation, privacy incidents, and approval frequency.
+- Evaluate second-brain citation validity, task relevance, freshness accuracy, duplicate/contradiction handling, user usefulness feedback, and backup/restore integrity; set release thresholds from a measured baseline.
 - Report **tokens per accepted task** and **agent turns per accepted task** for three context strategies on the same task set: whole-file baseline, keyword/symbol retrieval, and graph-assisted navigation (§5.5, §6.7). Break results down by repository size class, since graph navigation is expected to help little on repositories that fit in the context window. A context-saving strategy that lowers acceptance or raises regressions is a failure, not a saving.
 - Keep agent trajectories (tool calls, context layers, disclosure rungs, and outcomes) for benchmark runs so regressions in navigation behavior can be diagnosed, not only detected.
 - Do not use proprietary user repositories in shared evaluation unless explicitly consented and sanitized.
@@ -890,11 +941,17 @@ The following four milestones adapt the reference plan into testable technical i
 - Layered settings, instruction-file compatibility, command palette and keybindings, theming and accessibility, notifications, onboarding, diagnostics bundle, and commit/PR message generation.
 - CI/PR integrations, model routing policies, cost controls, and evaluation dashboard.
 - Optional local reranking, task classification, codebase summarization, and semantic tool/skill candidate discovery, each separately configured and unable to bypass gateway permissions.
-- Communities and the task-personalized repository map, graph-assisted check selection, constrained structured output where runtimes support it, and the knowledge map view with linked-note memory and Obsidian-compatible export (§5.5.3, §5.6, §6.7, §9.6).
 - Complete the supported local runtime matrix and retrieval capabilities required by the PRD.
 - Signing/notarization, installer and update validation, and release smoke tests on each supported OS.
 
 **Exit:** release candidate meets PRD readiness criteria and has recovery, migration, privacy, and support documentation.
+
+### Follow-up release — Knowledge map and second brain (v1.5)
+
+- Deliver communities and the task-personalized repository map, graph-assisted check selection, constrained structured output where runtimes support it, and the knowledge map with linked-note memory and Obsidian-compatible export (§5.5.3, §5.6, §6.7, §9.6; FR-118 to FR-124).
+- Deliver the full second-brain capture inbox, user-reviewed knowledge lifecycle, provenance/temporal relations, explainable hybrid recall and feedback, and versioned offline backup/restore with reviewed Markdown/wikilink import (§5.8, §10.3; FR-126 to FR-130).
+
+**Exit:** P1 knowledge features meet the PRD acceptance criteria without making P1 functionality a dependency of the initial release.
 
 ## 17. Open technical decisions
 
@@ -918,13 +975,14 @@ For each decision, evaluate a maintained open-source candidate and a custom impl
 14. Source-control implementation (Git CLI versus embedded library) and credential-helper handling.
 15. Language-server distribution and trust model, and the scope of debugger-adapter support.
 16. Hook, rule, and custom-command definition formats and compatibility with other agent tools' formats.
-17. Code knowledge graph store and query engine (embedded graph tables in the index database versus a dedicated embedded graph store), graph schema versioning, community-detection algorithm, and repository-map ranking method.
+17. Dedicated embedded graph store: LadybugDB is proposed by ADR-0017; graph schema versioning, community-detection algorithm, and repository-map ranking method remain open.
 18. Knowledge map rendering engine and layout strategy for large graphs, linked-note storage format, and the Markdown/wikilink export format and its compatibility guarantees.
 19. OpenTelemetry-compatible instrumentation and export protocol, allowed data/destinations, user controls, retention, and threat model for telemetry egress (ADR-0019).
+20. Second-brain archive schema, Markdown/wikilink compatibility, and conflict policy (FR-130); portable-backup encryption and the re-review rule for restored records are proposed in [ADR-0021](./adr/0021-encrypt-portable-knowledge-backups.md) and require product-owner acceptance before implementation.
 
 ## 18. Traceability
 
-The [PRD](./PRD.md) defines user outcomes and functional requirements. This TRD defines proposed system responsibilities and controls. Implementation work should link each feature/task to one or more PRD requirement IDs (`FR-01` through `FR-124`) and to the relevant technical section, tests, and evidence. Changes to requirements should update both documents and any impacted ADRs.
+The [PRD](./PRD.md) defines user outcomes and functional requirements. This TRD defines proposed system responsibilities and controls. Implementation work should link each feature/task to one or more PRD requirement IDs (`FR-01` through `FR-130`) and to the relevant technical section, tests, and evidence. Changes to requirements should update both documents and any impacted ADRs.
 
 ## 19. Source references for agent practices
 

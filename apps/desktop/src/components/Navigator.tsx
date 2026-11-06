@@ -15,14 +15,15 @@ const groups: { label: string; items: { view: WorkspaceView; label: string; icon
   {
     label: en.navigation.groups.workspace,
     items: [
+      { view: "home", label: en.navigation.items.missionControl, icon: "brand" },
       { view: "chat", label: en.navigation.items.chat, icon: "chat" },
-      { view: "review", label: en.navigation.items.review, icon: "review" },
-      { view: "context", label: en.navigation.items.context, icon: "context" },
     ],
   },
   {
     label: en.navigation.groups.navigate,
     items: [
+      { view: "review", label: en.navigation.items.review, icon: "review" },
+      { view: "context", label: en.navigation.items.context, icon: "context" },
       { view: "explorer", label: en.navigation.items.explorer, icon: "explorer" },
       { view: "search", label: en.navigation.items.search, icon: "search" },
       { view: "source-control", label: en.navigation.items.sourceControl, icon: "source" },
@@ -51,7 +52,7 @@ export function Navigator({ activeView, collapsed, isMobile, onClose, onNavigate
       <header className="navigator-header">
         <a aria-label={`${en.app.title} home`} className="brand" href="#workspace" onClick={(event) => {
           event.preventDefault();
-          onNavigate("chat");
+          onNavigate("home");
         }}>
           <span className="brand-mark"><Icon name="brand" /></span>
           <span className="brand-name"><strong>{en.app.title}</strong><small>{en.app.subtitle}</small></span>

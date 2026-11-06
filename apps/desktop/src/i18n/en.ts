@@ -8,9 +8,9 @@ export const en = {
     subtitle: "Local-first workspace",
     skipToWorkspace: "Skip to workspace",
     toggleNavigator: "Toggle navigator",
-    toggleConversation: "Toggle conversation companion",
+    toggleConversation: "Toggle workspace inspector",
     closeNavigator: "Close navigator",
-    closeConversation: "Close conversation companion",
+    closeConversation: "Close workspace inspector",
     navigator: "Navigator",
     applicationNavigator: "Application navigator",
     workspace: "Workspace",
@@ -46,6 +46,7 @@ export const en = {
   navigation: {
     groups: { workspace: "Workspace", navigate: "Navigate", manage: "Manage" },
     items: {
+      missionControl: "Mission Control",
       chat: "Chat",
       review: "Review",
       context: "Context",
@@ -65,7 +66,8 @@ export const en = {
     footerDetail: "Runtime unavailable",
   },
   screens: {
-    chat: "Editor",
+    home: "Mission Control",
+    chat: "Chat",
     review: "Diff review",
     context: "Context Inspector",
     models: "Model library",
